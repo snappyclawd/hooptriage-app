@@ -137,7 +137,7 @@ struct ClipGridView: View {
     // MARK: - Grouped Grid
     
     private var groupedGrid: some View {
-        LazyVStack(alignment: .leading, spacing: 20) {
+        LazyVStack(alignment: .leading, spacing: 48) {
             ForEach(groupedSections, id: \.title) { section in
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 8) {

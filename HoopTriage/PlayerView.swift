@@ -320,19 +320,15 @@ struct PlayerView: View {
         isPlaying = false
     }
     
-    /// Frame step forward or backward
+    /// Frame step forward or backward using AVPlayerItem.step(byCount:)
     private func stepFrame(forward: Bool) {
         guard let player = player else { return }
         player.pause()
         playbackDirection = 0
         isPlaying = false
         
-        let frameTime = CMTime(seconds: 1.0 / 30.0, preferredTimescale: 600)
-        if forward {
-            player.seek(to: CMTimeAdd(player.currentTime(), frameTime), toleranceBefore: .zero, toleranceAfter: .zero)
-        } else {
-            player.seek(to: CMTimeSubtract(player.currentTime(), frameTime), toleranceBefore: .zero, toleranceAfter: .zero)
-        }
+        // Native frame stepping — hardware-optimized for both directions
+        player.currentItem?.step(byCount: forward ? 1 : -1)
     }
     
     /// Jump forward/backward by seconds

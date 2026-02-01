@@ -37,6 +37,7 @@ struct ClipGridView: View {
                         }
                     }
             )
+            .focusable()
             .focused($isGridFocused)
             
             // Expanded player overlay
@@ -259,6 +260,9 @@ struct ClipGridView: View {
             },
             onHoverChange: { hovering in
                 store.hoveredClipID = hovering ? clip.id : nil
+            },
+            onRemove: {
+                store.removeClip(id: clip.id)
             },
             onOpen: {
                 expandedClip = clip

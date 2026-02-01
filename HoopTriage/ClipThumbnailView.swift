@@ -14,6 +14,7 @@ struct ClipThumbnailView: View {
     let onRemoveTag: (String) -> Void
     let onAddTag: (String) -> Void
     let onHoverChange: (Bool) -> Void
+    let onRemove: () -> Void
     let onOpen: () -> Void
     
     @State private var posterImage: NSImage? = nil
@@ -26,21 +27,21 @@ struct ClipThumbnailView: View {
     @State private var newTagText = ""
     @State private var audioPlayer: AVPlayer? = nil
     @State private var lastAudioSeek: Double = -1
+    @State private var isCardHovered = false  // tracks hover over ENTIRE card
     
     private let scrubSize = CGSize(width: 480, height: 270)
     
-    // Score badge colours matching the HTML version
     private static let scoreColors: [Int: Color] = [
-        5: Color(red: 0.133, green: 0.773, blue: 0.369),  // green
-        4: Color(red: 0.518, green: 0.800, blue: 0.086),  // lime
-        3: Color(red: 0.918, green: 0.702, blue: 0.031),  // yellow
-        2: Color(red: 0.976, green: 0.451, blue: 0.086),  // orange
-        1: Color(red: 0.937, green: 0.267, blue: 0.267),  // red
+        5: Color(red: 0.133, green: 0.773, blue: 0.369),
+        4: Color(red: 0.518, green: 0.800, blue: 0.086),
+        3: Color(red: 0.918, green: 0.702, blue: 0.031),
+        2: Color(red: 0.976, green: 0.451, blue: 0.086),
+        1: Color(red: 0.937, green: 0.267, blue: 0.267),
     ]
     
     var body: some View {
         VStack(spacing: 0) {
-            // Video area
+            // Video area — hover to scrub
             GeometryReader { geo in
                 ZStack {
                     Color.black
@@ -53,12 +54,43 @@ struct ClipThumbnailView: View {
                             .clipped()
                     }
                     
-                    // Rating badge overlay (top-left)
+                    // Rating badge (top-left)
                     if clip.rating > 0 {
                         VStack {
                             HStack {
-                                ratingBadge
-                                    .padding(6)
+                                ratingBadge.padding(6)
+                                Spacer()
+                            }
+                            Spacer()
+                        }
+                    }
+                    
+                    // Delete button (top-right, on card hover)
+                    if isCardHovered {
+                        VStack {
+                            HStack {
+                                Spacer()
+                                Button(action: onRemove) {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .font(.system(size: 18))
+                                        .foregroundColor(.white.opacity(0.8))
+                                        .shadow(color: .black.opacity(0.5), radius: 2)
+                                }
+                                .buttonStyle(.plain)
+                                .help("Remove from triage (Del)")
+                                .padding(6)
+                            }
+                            Spacer()
+                        }
+                    }
+                    
+                    // Tag pills overlay (top-left, below rating if present)
+                    if !clip.tags.isEmpty {
+                        VStack {
+                            HStack {
+                                if clip.rating > 0 {
+                                    Spacer().frame(width: 0) // rating badge is already there
+                                }
                                 Spacer()
                             }
                             Spacer()
@@ -101,19 +133,14 @@ struct ClipThumbnailView: View {
                     case .active(let location):
                         let wasHovering = isHovering
                         isHovering = true
-                        if !wasHovering {
-                            onHoverChange(true)
-                        }
                         let progress = max(0, min(1, location.x / geo.size.width))
                         hoverProgress = progress
                         currentTime = clip.duration * Double(progress)
                         
-                        // Pre-create audio player on first hover
                         if !wasHovering && audioEnabled {
                             prepareAudio()
                         }
                         
-                        // Generate thumbnail
                         Task {
                             let img = await thumbnailGenerator.thumbnail(
                                 for: clip.url,
@@ -125,7 +152,6 @@ struct ClipThumbnailView: View {
                             }
                         }
                         
-                        // Audio scrub (throttled: only seek if moved > 0.3s)
                         if audioEnabled {
                             let delta = abs(currentTime - lastAudioSeek)
                             if delta > 0.3 {
@@ -135,20 +161,19 @@ struct ClipThumbnailView: View {
                         
                     case .ended:
                         isHovering = false
-                        onHoverChange(false)
                         scrubImage = nil
                         hoverProgress = 0
                         stopAudio()
                     }
                 }
                 .contentShape(Rectangle())
-                .onTapGesture {
+                .onTapGesture(count: 2) {
                     onOpen()
                 }
             }
             .aspectRatio(16/9, contentMode: .fit)
             
-            // Info bar
+            // Info bar — click to open
             VStack(spacing: 4) {
                 HStack(spacing: 8) {
                     Text(clip.filename)
@@ -173,10 +198,19 @@ struct ClipThumbnailView: View {
             .padding(.horizontal, 8)
             .padding(.vertical, 6)
             .background(Color(nsColor: .controlBackgroundColor))
+            .contentShape(Rectangle())
+            .onTapGesture {
+                onOpen()
+            }
         }
         .background(Color(nsColor: .controlBackgroundColor))
         .cornerRadius(8)
         .shadow(color: .black.opacity(0.2), radius: 2, y: 1)
+        // Track hover over the ENTIRE card for hoveredClipID and delete button
+        .onHover { hovering in
+            isCardHovered = hovering
+            onHoverChange(hovering)
+        }
         .onChange(of: showTagPickerBinding) { _, show in
             if show { showTagPicker = true }
         }
@@ -226,10 +260,8 @@ struct ClipThumbnailView: View {
         let cmTime = CMTime(seconds: time, preferredTimescale: 600)
         player.seek(to: cmTime, toleranceBefore: .zero, toleranceAfter: .zero) { _ in
             player.play()
-            // Play for 0.4s then pause to give a snippet
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
                 if abs(self.currentTime - time) < 0.5 {
-                    // Mouse hasn't moved much, pause
                     player.pause()
                 }
             }
@@ -274,7 +306,6 @@ struct ClipThumbnailView: View {
     
     private var tagDisplay: some View {
         HStack(spacing: 4) {
-            // Show tag pills (compact)
             ForEach(Array(clip.tags).sorted(), id: \.self) { tag in
                 Text(tag)
                     .font(.system(size: 9, weight: .medium))
@@ -285,7 +316,6 @@ struct ClipThumbnailView: View {
                     .cornerRadius(8)
             }
             
-            // Add tag button
             Image(systemName: "tag")
                 .font(.system(size: 11))
                 .foregroundColor(.secondary)

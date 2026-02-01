@@ -1,0 +1,271 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		AA000001 /* HoopTriageApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000010 /* HoopTriageApp.swift */; };
+		AA000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000011 /* ContentView.swift */; };
+		AA000003 /* ClipGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000012 /* ClipGridView.swift */; };
+		AA000004 /* ClipThumbnailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000013 /* ClipThumbnailView.swift */; };
+		AA000005 /* ClipModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000014 /* ClipModel.swift */; };
+		AA000006 /* ThumbnailGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000015 /* ThumbnailGenerator.swift */; };
+		AA000007 /* ClipStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000016 /* ClipStore.swift */; };
+		AA000008 /* PlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000017 /* PlayerView.swift */; };
+		AA000009 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA000018 /* Assets.xcassets */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		AA000000 /* HoopTriage.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HoopTriage.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA000010 /* HoopTriageApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HoopTriageApp.swift; sourceTree = "<group>"; };
+		AA000011 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		AA000012 /* ClipGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipGridView.swift; sourceTree = "<group>"; };
+		AA000013 /* ClipThumbnailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipThumbnailView.swift; sourceTree = "<group>"; };
+		AA000014 /* ClipModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipModel.swift; sourceTree = "<group>"; };
+		AA000015 /* ThumbnailGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThumbnailGenerator.swift; sourceTree = "<group>"; };
+		AA000016 /* ClipStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipStore.swift; sourceTree = "<group>"; };
+		AA000017 /* PlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerView.swift; sourceTree = "<group>"; };
+		AA000018 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		AA000019 /* HoopTriage.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = HoopTriage.entitlements; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		AA100000 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		AA200000 = {
+			isa = PBXGroup;
+			children = (
+				AA200001 /* HoopTriage */,
+				AA200002 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		AA200001 /* HoopTriage */ = {
+			isa = PBXGroup;
+			children = (
+				AA000010 /* HoopTriageApp.swift */,
+				AA000011 /* ContentView.swift */,
+				AA000012 /* ClipGridView.swift */,
+				AA000013 /* ClipThumbnailView.swift */,
+				AA000014 /* ClipModel.swift */,
+				AA000015 /* ThumbnailGenerator.swift */,
+				AA000016 /* ClipStore.swift */,
+				AA000017 /* PlayerView.swift */,
+				AA000018 /* Assets.xcassets */,
+				AA000019 /* HoopTriage.entitlements */,
+			);
+			path = HoopTriage;
+			sourceTree = "<group>";
+		};
+		AA200002 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				AA000000 /* HoopTriage.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		AA300000 /* HoopTriage */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AA500000 /* Build configuration list for PBXNativeTarget "HoopTriage" */;
+			buildPhases = (
+				AA400000 /* Sources */,
+				AA100000 /* Frameworks */,
+				AA400001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = HoopTriage;
+			productName = HoopTriage;
+			productReference = AA000000 /* HoopTriage.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		AA600000 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+			};
+			buildConfigurationList = AA500002 /* Build configuration list for PBXProject "HoopTriage" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = AA200000;
+			productRefGroup = AA200002 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				AA300000 /* HoopTriage */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		AA400001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA000009 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		AA400000 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA000001 /* HoopTriageApp.swift in Sources */,
+				AA000002 /* ContentView.swift in Sources */,
+				AA000003 /* ClipGridView.swift in Sources */,
+				AA000004 /* ClipThumbnailView.swift in Sources */,
+				AA000005 /* ClipModel.swift in Sources */,
+				AA000006 /* ThumbnailGenerator.swift in Sources */,
+				AA000007 /* ClipStore.swift in Sources */,
+				AA000008 /* PlayerView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		AA700000 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		AA700001 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		AA700002 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = HoopTriage/HoopTriage.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.video";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 snappyclawd";
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.snappyclawd.HoopTriage;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		AA700003 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = HoopTriage/HoopTriage.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.video";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 snappyclawd";
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.snappyclawd.HoopTriage;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		AA500000 /* Build configuration list for PBXNativeTarget "HoopTriage" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA700002 /* Debug */,
+				AA700003 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AA500002 /* Build configuration list for PBXProject "HoopTriage" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA700000 /* Debug */,
+				AA700001 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = AA600000 /* Project object */;
+}

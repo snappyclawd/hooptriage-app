@@ -6,6 +6,7 @@ struct ClipThumbnailView: View {
     let clip: Clip
     let thumbnailGenerator: ThumbnailGenerator
     let availableTags: [String]
+    let audioEnabled: Bool
     let onRate: (Int) -> Void
     let onTag: (String?) -> Void
     let onAddTag: (String) -> Void
@@ -19,6 +20,7 @@ struct ClipThumbnailView: View {
     @State private var hoveredStar: Int = 0
     @State private var showTagPicker = false
     @State private var newTagText = ""
+    @State private var audioPlayer: AVPlayer? = nil
     
     private let scrubSize = CGSize(width: 480, height: 270)
     
@@ -76,6 +78,7 @@ struct ClipThumbnailView: View {
                         hoverProgress = progress
                         currentTime = clip.duration * Double(progress)
                         
+                        // Generate thumbnail
                         Task {
                             let img = await thumbnailGenerator.thumbnail(
                                 for: clip.url,
@@ -87,10 +90,16 @@ struct ClipThumbnailView: View {
                             }
                         }
                         
+                        // Audio scrub
+                        if audioEnabled {
+                            scrubAudio(to: currentTime)
+                        }
+                        
                     case .ended:
                         isHovering = false
                         scrubImage = nil
                         hoverProgress = 0
+                        stopAudio()
                     }
                 }
                 .onTapGesture(count: 2) {
@@ -116,12 +125,8 @@ struct ClipThumbnailView: View {
                 }
                 
                 HStack(spacing: 6) {
-                    // Star rating — prominent
                     starRating
-                    
                     Spacer()
-                    
-                    // Tag
                     tagButton
                 }
             }
@@ -139,6 +144,25 @@ struct ClipThumbnailView: View {
                 size: scrubSize
             )
         }
+    }
+    
+    // MARK: - Audio Scrub
+    
+    private func scrubAudio(to time: Double) {
+        if audioPlayer == nil {
+            let playerItem = AVPlayerItem(url: clip.url)
+            audioPlayer = AVPlayer(playerItem: playerItem)
+            audioPlayer?.volume = 0.5
+        }
+        
+        let cmTime = CMTime(seconds: time, preferredTimescale: 600)
+        audioPlayer?.seek(to: cmTime, toleranceBefore: .zero, toleranceAfter: CMTime(seconds: 0.1, preferredTimescale: 600))
+        audioPlayer?.play()
+    }
+    
+    private func stopAudio() {
+        audioPlayer?.pause()
+        audioPlayer = nil
     }
     
     // MARK: - Star Rating
@@ -164,10 +188,8 @@ struct ClipThumbnailView: View {
     
     private func starColor(for star: Int) -> Color {
         if hoveredStar > 0 {
-            // Hover state: highlight up to hovered star
             return star <= hoveredStar ? .orange : Color.gray.opacity(0.25)
         }
-        // Normal state
         return star <= clip.rating ? .yellow : Color.gray.opacity(0.25)
     }
     
@@ -176,7 +198,6 @@ struct ClipThumbnailView: View {
     private var tagButton: some View {
         Group {
             if let tag = clip.category {
-                // Show current tag as pill
                 Text(tag)
                     .font(.system(size: 10, weight: .medium))
                     .foregroundColor(.white)
@@ -186,7 +207,6 @@ struct ClipThumbnailView: View {
                     .cornerRadius(10)
                     .onTapGesture { showTagPicker.toggle() }
             } else {
-                // Show "+" button
                 Image(systemName: "tag")
                     .font(.system(size: 12))
                     .foregroundColor(.secondary)
@@ -200,11 +220,10 @@ struct ClipThumbnailView: View {
     
     private var tagPickerContent: some View {
         VStack(alignment: .leading, spacing: 4) {
-            // Existing tags
             ForEach(availableTags, id: \.self) { tag in
                 Button(action: {
                     if clip.category == tag {
-                        onTag(nil) // Remove tag
+                        onTag(nil)
                     } else {
                         onTag(tag)
                     }
@@ -233,7 +252,6 @@ struct ClipThumbnailView: View {
             
             Divider()
             
-            // New tag input
             HStack(spacing: 4) {
                 TextField("New tag...", text: $newTagText)
                     .textFieldStyle(.plain)
@@ -267,7 +285,6 @@ struct ClipThumbnailView: View {
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
             
-            // Clear tag option
             if clip.category != nil {
                 Divider()
                 Button(action: {

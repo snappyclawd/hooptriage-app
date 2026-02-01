@@ -32,7 +32,7 @@ class ClipStore: ObservableObject {
     @Published var sortOrder: SortOrder = .name
     @Published var filterRating: Int = 0 // 0 = show all
     @Published var filterTag: String? = nil
-    @Published var gridColumns: Int = 4
+    @Published var gridColumns: Int = 3
     @Published var availableTags: [String] = defaultTags
     
     let thumbnailGenerator = ThumbnailGenerator()

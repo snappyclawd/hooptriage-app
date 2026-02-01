@@ -3,6 +3,7 @@ import SwiftUI
 /// The main grid of clip thumbnails
 struct ClipGridView: View {
     @ObservedObject var store: ClipStore
+    let audioEnabled: Bool
     @State private var expandedClip: Clip? = nil
     
     private var columns: [GridItem] {
@@ -18,6 +19,7 @@ struct ClipGridView: View {
                             clip: clip,
                             thumbnailGenerator: store.thumbnailGenerator,
                             availableTags: store.availableTags,
+                            audioEnabled: audioEnabled,
                             onRate: { rating in
                                 store.setRating(rating, for: clip.id)
                             },

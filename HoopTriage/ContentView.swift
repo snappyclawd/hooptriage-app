@@ -5,15 +5,13 @@ import UniformTypeIdentifiers
 struct ContentView: View {
     @StateObject private var store = ClipStore()
     @State private var isDragTargeted = false
+    @State private var audioEnabled = false
     
     var body: some View {
         VStack(spacing: 0) {
-            // Toolbar
             toolbar
-            
             Divider()
             
-            // Tag filter bar (only when clips loaded)
             if !store.clips.isEmpty && !store.usedTags.isEmpty {
                 tagFilterBar
                 Divider()
@@ -22,10 +20,9 @@ struct ContentView: View {
             if store.clips.isEmpty && !store.isLoading {
                 dropZone
             } else {
-                ClipGridView(store: store)
+                ClipGridView(store: store, audioEnabled: audioEnabled)
             }
             
-            // Loading bar
             if store.isLoading {
                 ProgressView(value: store.loadingProgress)
                     .progressViewStyle(.linear)
@@ -64,6 +61,15 @@ struct ContentView: View {
             Spacer()
             
             if !store.clips.isEmpty {
+                // Audio toggle
+                Button(action: { audioEnabled.toggle() }) {
+                    Image(systemName: audioEnabled ? "speaker.wave.2.fill" : "speaker.slash.fill")
+                        .font(.system(size: 14))
+                        .foregroundColor(audioEnabled ? .accentColor : .secondary)
+                }
+                .buttonStyle(.plain)
+                .help(audioEnabled ? "Mute scrub audio" : "Enable scrub audio")
+                
                 // Rating filter
                 Picker("", selection: $store.filterRating) {
                     Text("All").tag(0)
@@ -82,15 +88,15 @@ struct ContentView: View {
                 }
                 .frame(width: 110)
                 
-                // Grid size slider (fixed: small on left, big on right)
+                // Grid size slider (1-5 columns, small left, big right)
                 HStack(spacing: 4) {
                     Image(systemName: "square.grid.4x3.fill")
                         .foregroundColor(.secondary)
                         .font(.system(size: 10))
                     Slider(value: Binding(
-                        get: { Double(9 - store.gridColumns) }, // Invert: left=small(many cols), right=big(few cols)
-                        set: { store.gridColumns = max(1, min(8, 9 - Int($0))) }
-                    ), in: 1...8, step: 1)
+                        get: { Double(6 - store.gridColumns) },
+                        set: { store.gridColumns = max(1, min(5, 6 - Int($0))) }
+                    ), in: 1...5, step: 1)
                     .frame(width: 80)
                     Image(systemName: "square")
                         .foregroundColor(.secondary)

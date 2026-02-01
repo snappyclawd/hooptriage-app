@@ -17,8 +17,15 @@ struct ClipGridView: View {
                         ClipThumbnailView(
                             clip: clip,
                             thumbnailGenerator: store.thumbnailGenerator,
+                            availableTags: store.availableTags,
                             onRate: { rating in
                                 store.setRating(rating, for: clip.id)
+                            },
+                            onTag: { tag in
+                                store.setCategory(tag, for: clip.id)
+                            },
+                            onAddTag: { tag in
+                                store.addTag(tag)
                             },
                             onDoubleClick: {
                                 expandedClip = clip

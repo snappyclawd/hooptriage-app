@@ -13,11 +13,15 @@ struct ContentView: View {
             
             Divider()
             
+            // Tag filter bar (only when clips loaded)
+            if !store.clips.isEmpty && !store.usedTags.isEmpty {
+                tagFilterBar
+                Divider()
+            }
+            
             if store.clips.isEmpty && !store.isLoading {
-                // Drop zone
                 dropZone
             } else {
-                // Clip grid
                 ClipGridView(store: store)
             }
             
@@ -40,7 +44,6 @@ struct ContentView: View {
     
     private var toolbar: some View {
         HStack(spacing: 16) {
-            // App title
             HStack(spacing: 6) {
                 Text("🏀")
                     .font(.title2)
@@ -48,11 +51,11 @@ struct ContentView: View {
                     .font(.headline)
             }
             
-            // Stats
             if !store.clips.isEmpty {
                 HStack(spacing: 12) {
                     statBadge("\(store.totalClips)", label: "clips")
                     statBadge("\(store.ratedClips)", label: "rated")
+                    statBadge("\(store.taggedClips)", label: "tagged")
                     statBadge(store.totalDurationFormatted, label: "footage")
                 }
                 .font(.system(size: 12))
@@ -60,9 +63,8 @@ struct ContentView: View {
             
             Spacer()
             
-            // Controls
             if !store.clips.isEmpty {
-                // Filter by rating
+                // Rating filter
                 Picker("", selection: $store.filterRating) {
                     Text("All").tag(0)
                     ForEach(1...5, id: \.self) { r in
@@ -80,25 +82,71 @@ struct ContentView: View {
                 }
                 .frame(width: 110)
                 
-                // Grid size slider
+                // Grid size slider (fixed: small on left, big on right)
                 HStack(spacing: 4) {
-                    Image(systemName: "square.grid.3x3")
+                    Image(systemName: "square.grid.4x3.fill")
                         .foregroundColor(.secondary)
+                        .font(.system(size: 10))
                     Slider(value: Binding(
-                        get: { Double(store.gridColumns) },
-                        set: { store.gridColumns = max(1, min(8, Int($0))) }
+                        get: { Double(9 - store.gridColumns) }, // Invert: left=small(many cols), right=big(few cols)
+                        set: { store.gridColumns = max(1, min(8, 9 - Int($0))) }
                     ), in: 1...8, step: 1)
                     .frame(width: 80)
+                    Image(systemName: "square")
+                        .foregroundColor(.secondary)
+                        .font(.system(size: 10))
                 }
             }
             
-            // Open folder button
             Button(action: { store.pickFolder() }) {
                 Label("Open Folder", systemImage: "folder")
             }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
+    }
+    
+    // MARK: - Tag Filter Bar
+    
+    private var tagFilterBar: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+                Text("Tags:")
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+                
+                Button(action: { store.filterTag = nil }) {
+                    Text("All")
+                        .font(.system(size: 11, weight: store.filterTag == nil ? .semibold : .regular))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(store.filterTag == nil ? Color.accentColor.opacity(0.15) : Color.clear)
+                        .cornerRadius(12)
+                }
+                .buttonStyle(.plain)
+                
+                ForEach(store.usedTags, id: \.self) { tag in
+                    Button(action: {
+                        store.filterTag = store.filterTag == tag ? nil : tag
+                    }) {
+                        HStack(spacing: 4) {
+                            Circle()
+                                .fill(tagColor(for: tag))
+                                .frame(width: 6, height: 6)
+                            Text(tag)
+                                .font(.system(size: 11, weight: store.filterTag == tag ? .semibold : .regular))
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(store.filterTag == tag ? tagColor(for: tag).opacity(0.15) : Color.clear)
+                        .cornerRadius(12)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 6)
+        }
     }
     
     private func statBadge(_ value: String, label: String) -> some View {
@@ -170,5 +218,11 @@ struct ContentView: View {
         }
         
         return true
+    }
+    
+    private func tagColor(for tag: String) -> Color {
+        let colors: [Color] = [.blue, .green, .orange, .purple, .pink, .red, .teal, .indigo, .mint, .cyan]
+        let hash = abs(tag.hashValue)
+        return colors[hash % colors.count]
     }
 }

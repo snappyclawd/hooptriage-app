@@ -8,6 +8,20 @@ enum SortOrder: String, CaseIterable {
     case rating = "Rating"
 }
 
+/// Default basketball tags
+let defaultTags = [
+    "Action",
+    "Three",
+    "Dunk",
+    "Huddle",
+    "Warmup",
+    "Establishment",
+    "Interview",
+    "Celebration",
+    "Defense",
+    "Fast Break",
+]
+
 /// Main data store for all clips
 @MainActor
 class ClipStore: ObservableObject {
@@ -17,16 +31,23 @@ class ClipStore: ObservableObject {
     @Published var folderURL: URL? = nil
     @Published var sortOrder: SortOrder = .name
     @Published var filterRating: Int = 0 // 0 = show all
+    @Published var filterTag: String? = nil
     @Published var gridColumns: Int = 4
+    @Published var availableTags: [String] = defaultTags
     
     let thumbnailGenerator = ThumbnailGenerator()
     
     var sortedAndFilteredClips: [Clip] {
         var result = clips
         
-        // Filter
+        // Filter by rating
         if filterRating > 0 {
             result = result.filter { $0.rating == filterRating }
+        }
+        
+        // Filter by tag
+        if let tag = filterTag {
+            result = result.filter { $0.category == tag }
         }
         
         // Sort
@@ -40,6 +61,12 @@ class ClipStore: ObservableObject {
         }
         
         return result
+    }
+    
+    /// Tags currently in use by clips
+    var usedTags: [String] {
+        let tags = Set(clips.compactMap { $0.category })
+        return availableTags.filter { tags.contains($0) }
     }
     
     /// Load clips from a directory
@@ -62,7 +89,6 @@ class ClipStore: ObservableObject {
                 return
             }
             
-            // Collect all video file URLs
             var videoURLs: [URL] = []
             while let fileURL = enumerator.nextObject() as? URL {
                 let ext = fileURL.pathExtension.lowercased()
@@ -75,7 +101,6 @@ class ClipStore: ObservableObject {
             
             let total = videoURLs.count
             
-            // Load clips in batches for responsiveness
             for (index, fileURL) in videoURLs.enumerated() {
                 let clip = Clip(url: fileURL)
                 
@@ -94,7 +119,7 @@ class ClipStore: ObservableObject {
     /// Update a clip's rating
     func setRating(_ rating: Int, for clipID: UUID) {
         if let index = clips.firstIndex(where: { $0.id == clipID }) {
-            clips[index].rating = clips[index].rating == rating ? 0 : rating // Toggle off if same
+            clips[index].rating = clips[index].rating == rating ? 0 : rating
         }
     }
     
@@ -102,6 +127,13 @@ class ClipStore: ObservableObject {
     func setCategory(_ category: String?, for clipID: UUID) {
         if let index = clips.firstIndex(where: { $0.id == clipID }) {
             clips[index].category = category
+        }
+    }
+    
+    /// Add a new tag to available tags
+    func addTag(_ tag: String) {
+        if !availableTags.contains(tag) {
+            availableTags.append(tag)
         }
     }
     
@@ -119,9 +151,11 @@ class ClipStore: ObservableObject {
         }
     }
     
-    /// Summary stats
+    // MARK: - Stats
+    
     var totalClips: Int { clips.count }
     var ratedClips: Int { clips.filter { $0.rating > 0 }.count }
+    var taggedClips: Int { clips.filter { $0.category != nil }.count }
     var totalDuration: Double { clips.reduce(0) { $0 + $1.duration } }
     
     var totalDurationFormatted: String {

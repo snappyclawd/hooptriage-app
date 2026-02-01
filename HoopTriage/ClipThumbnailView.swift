@@ -32,6 +32,7 @@ struct ClipThumbnailView: View {
     @State private var isCardHovered = false  // tracks hover over ENTIRE card
     
     private let scrubSize = CGSize(width: 480, height: 270)
+    private let cardRadius: CGFloat = 14
     
     private static let scoreColors: [Int: Color] = [
         5: Color(red: 0.133, green: 0.773, blue: 0.369),
@@ -218,10 +219,10 @@ struct ClipThumbnailView: View {
             .aspectRatio(16/9, contentMode: .fit)
             
             // Info bar — click to open
-            VStack(spacing: 4) {
+            VStack(spacing: 6) {
                 HStack(spacing: 8) {
                     Text(clip.filename)
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.system(size: 13, weight: .semibold))
                         .lineLimit(1)
                         .truncationMode(.middle)
                         .foregroundColor(.primary)
@@ -229,7 +230,7 @@ struct ClipThumbnailView: View {
                     Spacer()
                     
                     Text(clip.durationFormatted)
-                        .font(.system(size: 11, design: .monospaced))
+                        .font(.system(size: 11, weight: .medium, design: .monospaced))
                         .foregroundColor(.secondary)
                 }
                 
@@ -239,8 +240,8 @@ struct ClipThumbnailView: View {
                     tagDisplay
                 }
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 6)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
             .background(Color(nsColor: .controlBackgroundColor))
             .contentShape(Rectangle())
             .onTapGesture {
@@ -248,8 +249,8 @@ struct ClipThumbnailView: View {
             }
         }
         .background(Color(nsColor: .controlBackgroundColor))
-        .cornerRadius(8)
-        .shadow(color: .black.opacity(0.2), radius: 2, y: 1)
+        .clipShape(RoundedRectangle(cornerRadius: cardRadius, style: .continuous))
+        .shadow(color: .black.opacity(0.08), radius: 8, y: 3)
         // Track hover over the ENTIRE card for hoveredClipID and delete button
         .onHover { hovering in
             isCardHovered = hovering

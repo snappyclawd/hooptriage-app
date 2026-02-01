@@ -53,15 +53,17 @@ struct ContentView: View {
     
     private var toolbar: some View {
         HStack(spacing: 16) {
-            HStack(spacing: 6) {
+            HStack(spacing: 8) {
                 Text("🏀")
                     .font(.title2)
                 Text("HoopTriage")
-                    .font(.headline)
+                    .font(.system(size: 16, weight: .bold))
             }
             
             if !store.clips.isEmpty {
-                HStack(spacing: 12) {
+                Divider().frame(height: 20)
+                
+                HStack(spacing: 14) {
                     statBadge("\(store.totalClips)", label: "clips")
                     statBadge("\(store.ratedClips)", label: "rated")
                     statBadge("\(store.taggedClips)", label: "tagged")
@@ -175,8 +177,8 @@ struct ContentView: View {
                 Label("Add Footage", systemImage: "plus.rectangle.on.folder")
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
     }
     
     // MARK: - Tag Filter Bar
@@ -217,8 +219,8 @@ struct ContentView: View {
                     .buttonStyle(.plain)
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 6)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 8)
         }
     }
     
@@ -235,39 +237,43 @@ struct ContentView: View {
     // MARK: - Drop Zone
     
     private var dropZone: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 20) {
             Spacer()
             
             Image(systemName: "film.stack")
-                .font(.system(size: 48))
-                .foregroundColor(isDragTargeted ? .accentColor : .secondary)
+                .font(.system(size: 52))
+                .foregroundColor(isDragTargeted ? .accentColor : .secondary.opacity(0.6))
             
-            Text("Drop folders or clips here")
-                .font(.title2)
-                .foregroundColor(isDragTargeted ? .accentColor : .primary)
-            
-            Text("or")
-                .foregroundColor(.secondary)
+            VStack(spacing: 6) {
+                Text("Drop folders or clips here")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(isDragTargeted ? .accentColor : .primary)
+                
+                Text("or")
+                    .font(.system(size: 14))
+                    .foregroundColor(.secondary)
+            }
             
             Button(action: { store.pickFolder() }) {
                 Label("Add Footage", systemImage: "plus.rectangle.on.folder")
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 8)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 10)
             }
             .buttonStyle(.borderedProminent)
+            .controlSize(.large)
             
             Text("Supports MOV, MP4, AVI, MKV and more")
-                .font(.caption)
+                .font(.system(size: 12))
                 .foregroundColor(.secondary)
             
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
-            RoundedRectangle(cornerRadius: 16)
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .strokeBorder(
-                    isDragTargeted ? Color.accentColor : Color.secondary.opacity(0.3),
-                    style: StrokeStyle(lineWidth: 2, dash: [8, 4])
+                    isDragTargeted ? Color.accentColor : Color.secondary.opacity(0.2),
+                    style: StrokeStyle(lineWidth: 2, dash: [10, 5])
                 )
                 .padding(40)
         )

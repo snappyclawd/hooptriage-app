@@ -15,7 +15,7 @@ struct ClipGridView: View {
     @FocusState private var isGridFocused: Bool
     
     private var columns: [GridItem] {
-        Array(repeating: GridItem(.flexible(), spacing: 8), count: store.gridColumns)
+        Array(repeating: GridItem(.flexible(), spacing: 16), count: store.gridColumns)
     }
     
     var body: some View {
@@ -157,41 +157,41 @@ struct ClipGridView: View {
     // MARK: - Flat Grid
     
     private var flatGrid: some View {
-        LazyVGrid(columns: columns, spacing: 8) {
+        LazyVGrid(columns: columns, spacing: 16) {
             ForEach(store.sortedAndFilteredClips) { clip in
                 clipCard(clip)
             }
         }
-        .padding(12)
+        .padding(20)
     }
     
     // MARK: - Grouped Grid
     
     private var groupedGrid: some View {
-        LazyVStack(alignment: .leading, spacing: 48) {
+        LazyVStack(alignment: .leading, spacing: 40) {
             ForEach(groupedSections, id: \.title) { section in
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: 12) {
                     HStack(spacing: 10) {
                         if store.groupMode == .rating {
                             ratingHeader(section.title)
                         } else {
                             Text(section.title)
-                                .font(.system(size: 15, weight: .semibold))
+                                .font(.system(size: 17, weight: .bold))
                         }
                         
                         Text("\(section.clips.count)")
-                            .font(.system(size: 13, weight: .medium))
+                            .font(.system(size: 12, weight: .semibold))
                             .foregroundColor(.secondary)
                             .padding(.horizontal, 10)
-                            .padding(.vertical, 3)
-                            .background(Color.gray.opacity(0.15))
-                            .cornerRadius(12)
+                            .padding(.vertical, 4)
+                            .background(Color.gray.opacity(0.1))
+                            .cornerRadius(20)
                         
                         Spacer()
                     }
-                    .padding(.horizontal, 12)
+                    .padding(.horizontal, 20)
                     
-                    LazyVGrid(columns: columns, spacing: 8) {
+                    LazyVGrid(columns: columns, spacing: 16) {
                         ForEach(section.clips) { clip in
                             clipCard(clip)
                         }
@@ -199,7 +199,7 @@ struct ClipGridView: View {
                 }
             }
         }
-        .padding(12)
+        .padding(20)
     }
     
     private func ratingHeader(_ title: String) -> some View {

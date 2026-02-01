@@ -201,7 +201,7 @@ struct ClipThumbnailView: View {
         if audioPlayer == nil {
             let playerItem = AVPlayerItem(url: clip.url)
             audioPlayer = AVPlayer(playerItem: playerItem)
-            audioPlayer?.volume = 0.5
+            audioPlayer?.volume = 0.6
         }
     }
     
@@ -209,15 +209,12 @@ struct ClipThumbnailView: View {
         guard let player = audioPlayer else { return }
         lastAudioSeek = time
         let cmTime = CMTime(seconds: time, preferredTimescale: 600)
-        player.seek(to: cmTime, toleranceBefore: .zero, toleranceAfter: .zero) { _ in
-            player.play()
-            // Play for 0.4s then pause to give a snippet
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                if abs(self.currentTime - time) < 0.5 {
-                    // Mouse hasn't moved much, pause
-                    player.pause()
-                }
-            }
+        // Use loose tolerance for fast seeking (don't wait for exact frame)
+        player.seek(to: cmTime, toleranceBefore: CMTime(seconds: 0.2, preferredTimescale: 600), toleranceAfter: CMTime(seconds: 0.2, preferredTimescale: 600))
+        player.play()
+        // Ultra-short snippet: just 0.15s — enough to hear what's happening at this point
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            player.pause()
         }
     }
     

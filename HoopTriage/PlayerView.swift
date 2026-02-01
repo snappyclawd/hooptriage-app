@@ -25,7 +25,6 @@ struct PlayerView: View {
     @State private var hoveredStar: Int = 0
     @FocusState private var isFocused: Bool
     
-    @State private var reverseTimer: Timer? = nil
     @State private var timeObserver: Any? = nil
     
     var body: some View {
@@ -101,8 +100,6 @@ struct PlayerView: View {
             }
         }
         .onDisappear {
-            reverseTimer?.invalidate()
-            reverseTimer = nil
             if let observer = timeObserver {
                 player?.removeTimeObserver(observer)
             }
@@ -280,13 +277,15 @@ struct PlayerView: View {
     
     // MARK: - JKL Scrubbing
     
+    /// L key: play forward, accelerate with each press
     private func handleL() {
-        stopReversePlayback()
         guard let player = player else { return }
         
         if playbackDirection == 1 {
+            // Already forward — speed up
             speedIndex = min(speedIndex + 1, speedLevels.count - 1)
         } else {
+            // Was paused or reverse — start forward at 1x
             playbackDirection = 1
             speedIndex = 0
         }
@@ -295,31 +294,34 @@ struct PlayerView: View {
         isPlaying = true
     }
     
+    /// J key: play reverse using native AVPlayer negative rate
     private func handleJ() {
         guard let player = player else { return }
         
         if playbackDirection == -1 {
+            // Already reverse — speed up
             speedIndex = min(speedIndex + 1, speedLevels.count - 1)
         } else {
-            player.pause()
+            // Was paused or forward — start reverse at 1x
             playbackDirection = -1
             speedIndex = 0
         }
         
-        startReversePlayback(speed: speedLevels[speedIndex])
+        // AVPlayer supports negative rates natively (hardware-decoded reverse)
+        player.rate = -speedLevels[speedIndex]
         isPlaying = true
     }
     
+    /// K key: pause, reset speed
     private func handleK() {
-        stopReversePlayback()
         player?.pause()
         playbackDirection = 0
         speedIndex = 0
         isPlaying = false
     }
     
+    /// Frame step forward or backward
     private func stepFrame(forward: Bool) {
-        stopReversePlayback()
         guard let player = player else { return }
         player.pause()
         playbackDirection = 0
@@ -333,6 +335,7 @@ struct PlayerView: View {
         }
     }
     
+    /// Jump forward/backward by seconds
     private func jumpTime(by seconds: Double) {
         guard let player = player else { return }
         let target = CMTimeGetSeconds(player.currentTime()) + seconds
@@ -340,43 +343,17 @@ struct PlayerView: View {
         player.seek(to: CMTime(seconds: clamped, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero)
     }
     
+    /// Toggle play/pause with Space
     private func togglePlayPause() {
         guard let player = player else { return }
         if isPlaying {
             handleK()
         } else {
-            stopReversePlayback()
-            player.play()
+            player.rate = 1.0
             playbackDirection = 1
             speedIndex = 0
             isPlaying = true
         }
-    }
-    
-    // MARK: - Reverse Playback
-    
-    private func startReversePlayback(speed: Float) {
-        reverseTimer?.invalidate()
-        guard let player = player else { return }
-        
-        let interval = 1.0 / 30.0
-        let seekStep = Double(speed) * interval
-        
-        reverseTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { _ in
-            let current = CMTimeGetSeconds(player.currentTime())
-            let target = max(0, current - seekStep)
-            player.seek(to: CMTime(seconds: target, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero)
-            if target <= 0 {
-                self.stopReversePlayback()
-                self.playbackDirection = 0
-                self.isPlaying = false
-            }
-        }
-    }
-    
-    private func stopReversePlayback() {
-        reverseTimer?.invalidate()
-        reverseTimer = nil
     }
     
     // MARK: - Star Rating

@@ -177,7 +177,7 @@ struct ClipThumbnailView: View {
             VStack(spacing: 4) {
                 HStack(spacing: 8) {
                     Text(clip.filename)
-                        .font(.system(size: 11))
+                        .font(.system(size: 12, weight: .medium))
                         .lineLimit(1)
                         .truncationMode(.middle)
                         .foregroundColor(.primary)
@@ -185,7 +185,7 @@ struct ClipThumbnailView: View {
                     Spacer()
                     
                     Text(clip.durationFormatted)
-                        .font(.system(size: 10, design: .monospaced))
+                        .font(.system(size: 11, design: .monospaced))
                         .foregroundColor(.secondary)
                 }
                 
@@ -230,18 +230,18 @@ struct ClipThumbnailView: View {
     
     private var ratingBadge: some View {
         let color = Self.scoreColors[clip.rating] ?? .gray
-        return HStack(spacing: 2) {
+        return HStack(spacing: 3) {
             Text("\(clip.rating)")
-                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .font(.system(size: 16, weight: .bold, design: .rounded))
             Text("★")
-                .font(.system(size: 10))
+                .font(.system(size: 13))
         }
         .foregroundColor(.white)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
         .background(color)
-        .cornerRadius(6)
-        .shadow(color: .black.opacity(0.3), radius: 2, y: 1)
+        .cornerRadius(8)
+        .shadow(color: .black.opacity(0.3), radius: 3, y: 1)
     }
     
     // MARK: - Audio Scrub
@@ -277,10 +277,10 @@ struct ClipThumbnailView: View {
     // MARK: - Star Rating
     
     private var starRating: some View {
-        HStack(spacing: 2) {
+        HStack(spacing: 3) {
             ForEach(1...5, id: \.self) { star in
                 Text("★")
-                    .font(.system(size: 18, weight: .medium))
+                    .font(.system(size: 22, weight: .medium))
                     .foregroundColor(starColor(for: star))
                     .scaleEffect(hoveredStar == star ? 1.2 : 1.0)
                     .animation(.easeInOut(duration: 0.1), value: hoveredStar)
@@ -305,19 +305,19 @@ struct ClipThumbnailView: View {
     // MARK: - Tag Display & Picker
     
     private var tagDisplay: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: 5) {
             ForEach(Array(clip.tags).sorted(), id: \.self) { tag in
                 Text(tag)
-                    .font(.system(size: 9, weight: .medium))
+                    .font(.system(size: 11, weight: .semibold))
                     .foregroundColor(.white)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
                     .background(tagColor(for: tag))
-                    .cornerRadius(8)
+                    .cornerRadius(10)
             }
             
             Image(systemName: "tag")
-                .font(.system(size: 11))
+                .font(.system(size: 13))
                 .foregroundColor(.secondary)
                 .onTapGesture { showTagPicker.toggle() }
         }

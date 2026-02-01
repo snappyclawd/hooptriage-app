@@ -237,47 +237,194 @@ struct ContentView: View {
     
     // MARK: - Drop Zone
     
+    @State private var heroAnimating = false
+    
     private var dropZone: some View {
-        VStack(spacing: 20) {
-            Spacer()
+        ZStack {
+            // Warm gradient background
+            LinearGradient(
+                colors: isDragTargeted
+                    ? [Color.orange.opacity(0.08), Color.accentColor.opacity(0.06)]
+                    : [Color(nsColor: .windowBackgroundColor), Color.orange.opacity(0.03)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
             
-            Image(systemName: "film.stack")
-                .font(.system(size: 52))
-                .foregroundColor(isDragTargeted ? .accentColor : .secondary.opacity(0.6))
-            
-            VStack(spacing: 6) {
-                Text("Drop folders or clips here")
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundColor(isDragTargeted ? .accentColor : .primary)
+            VStack(spacing: 0) {
+                Spacer()
                 
-                Text("or")
-                    .font(.system(size: 14))
-                    .foregroundColor(.secondary)
+                // Hero section
+                VStack(spacing: 32) {
+                    // Animated icon cluster
+                    ZStack {
+                        // Background glow
+                        Circle()
+                            .fill(
+                                RadialGradient(
+                                    colors: [Color.orange.opacity(0.15), Color.clear],
+                                    center: .center,
+                                    startRadius: 20,
+                                    endRadius: 80
+                                )
+                            )
+                            .frame(width: 160, height: 160)
+                            .scaleEffect(heroAnimating ? 1.1 : 0.95)
+                            .animation(.easeInOut(duration: 3).repeatForever(autoreverses: true), value: heroAnimating)
+                        
+                        // Film strip icons floating around
+                        Image(systemName: "film")
+                            .font(.system(size: 20))
+                            .foregroundColor(.orange.opacity(0.3))
+                            .offset(x: -45, y: -30)
+                            .rotationEffect(.degrees(heroAnimating ? -8 : 8))
+                            .animation(.easeInOut(duration: 4).repeatForever(autoreverses: true), value: heroAnimating)
+                        
+                        Image(systemName: "star.fill")
+                            .font(.system(size: 14))
+                            .foregroundColor(.yellow.opacity(0.4))
+                            .offset(x: 50, y: -25)
+                            .rotationEffect(.degrees(heroAnimating ? 10 : -5))
+                            .animation(.easeInOut(duration: 3.5).repeatForever(autoreverses: true), value: heroAnimating)
+                        
+                        Image(systemName: "tag.fill")
+                            .font(.system(size: 16))
+                            .foregroundColor(.orange.opacity(0.3))
+                            .offset(x: 45, y: 30)
+                            .rotationEffect(.degrees(heroAnimating ? -5 : 10))
+                            .animation(.easeInOut(duration: 4.5).repeatForever(autoreverses: true), value: heroAnimating)
+                        
+                        // Main icon
+                        Image(systemName: "basketball.fill")
+                            .font(.system(size: 56))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [.orange, .orange.opacity(0.7)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .scaleEffect(isDragTargeted ? 1.15 : 1.0)
+                            .animation(.spring(response: 0.4, dampingFraction: 0.6), value: isDragTargeted)
+                    }
+                    
+                    // Headlines
+                    VStack(spacing: 10) {
+                        Text("Triage your game footage")
+                            .font(.system(size: 28, weight: .bold, design: .rounded))
+                            .foregroundColor(.primary)
+                        
+                        Text("Rate, tag, and organize clips — all from one place")
+                            .font(.system(size: 16))
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    // Drop area card
+                    VStack(spacing: 20) {
+                        // Main CTA
+                        Button(action: { store.pickFolder() }) {
+                            HStack(spacing: 10) {
+                                Image(systemName: "folder.badge.plus")
+                                    .font(.system(size: 18))
+                                Text("Choose Footage")
+                                    .font(.system(size: 16, weight: .semibold))
+                            }
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 32)
+                            .padding(.vertical, 14)
+                            .background(
+                                LinearGradient(
+                                    colors: [.orange, .orange.opacity(0.85)],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .cornerRadius(12)
+                            .shadow(color: .orange.opacity(0.3), radius: 8, y: 4)
+                        }
+                        .buttonStyle(.plain)
+                        
+                        // Divider with "or"
+                        HStack {
+                            Rectangle()
+                                .fill(Color.secondary.opacity(0.2))
+                                .frame(height: 1)
+                            Text("or drag & drop")
+                                .font(.system(size: 13))
+                                .foregroundColor(.secondary)
+                                .fixedSize()
+                            Rectangle()
+                                .fill(Color.secondary.opacity(0.2))
+                                .frame(height: 1)
+                        }
+                        .frame(maxWidth: 280)
+                        
+                        // Drop target area
+                        VStack(spacing: 8) {
+                            Image(systemName: isDragTargeted ? "arrow.down.circle.fill" : "arrow.down.circle.dotted")
+                                .font(.system(size: 28))
+                                .foregroundColor(isDragTargeted ? .orange : .secondary.opacity(0.4))
+                                .scaleEffect(isDragTargeted ? 1.2 : 1.0)
+                                .animation(.spring(response: 0.3), value: isDragTargeted)
+                            
+                            Text("Drop folders or video files here")
+                                .font(.system(size: 13))
+                                .foregroundColor(isDragTargeted ? .orange : .secondary.opacity(0.6))
+                        }
+                        .padding(.vertical, 20)
+                        .padding(.horizontal, 40)
+                        .frame(maxWidth: 360)
+                        .background(
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .strokeBorder(
+                                    isDragTargeted ? Color.orange : Color.secondary.opacity(0.15),
+                                    style: StrokeStyle(lineWidth: isDragTargeted ? 2 : 1.5, dash: [8, 4])
+                                )
+                                .background(
+                                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                        .fill(isDragTargeted ? Color.orange.opacity(0.05) : Color.clear)
+                                )
+                        )
+                    }
+                    .padding(32)
+                    .background(
+                        RoundedRectangle(cornerRadius: 20, style: .continuous)
+                            .fill(.ultraThinMaterial)
+                            .shadow(color: .black.opacity(0.06), radius: 20, y: 8)
+                    )
+                    .frame(maxWidth: 440)
+                }
+                
+                Spacer()
+                
+                // Bottom features strip
+                HStack(spacing: 40) {
+                    featureItem(icon: "hand.draw", title: "Scrub & Preview", desc: "Hover to preview clips instantly")
+                    featureItem(icon: "star", title: "Quick Rate", desc: "1-5 keyboard shortcuts")
+                    featureItem(icon: "tag", title: "Multi-Tag", desc: "Organize by plays, drills & more")
+                    featureItem(icon: "square.and.arrow.up", title: "Export", desc: "Sorted folders by rating")
+                }
+                .padding(.bottom, 40)
             }
-            
-            Button(action: { store.pickFolder() }) {
-                Label("Add Footage", systemImage: "plus.rectangle.on.folder")
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 10)
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-            
-            Text("Supports MOV, MP4, AVI, MKV and more")
-                .font(.system(size: 12))
-                .foregroundColor(.secondary)
-            
-            Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .strokeBorder(
-                    isDragTargeted ? Color.accentColor : Color.secondary.opacity(0.2),
-                    style: StrokeStyle(lineWidth: 2, dash: [10, 5])
-                )
-                .padding(40)
-        )
+        .onAppear { heroAnimating = true }
+    }
+    
+    private func featureItem(icon: String, title: String, desc: String) -> some View {
+        VStack(spacing: 6) {
+            Image(systemName: icon)
+                .font(.system(size: 20))
+                .foregroundColor(.orange.opacity(0.7))
+            Text(title)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(.primary)
+            Text(desc)
+                .font(.system(size: 11))
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(width: 140)
     }
     
     // MARK: - Drop handling

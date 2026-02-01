@@ -44,19 +44,11 @@ struct ClipGridView: View {
                 .focusable()
                 .focused($isGridFocused)
                 .overlay(alignment: .bottomTrailing) {
-                    // Back to top button
-                    Button(action: {
+                    BackToTopButton {
                         withAnimation(.easeInOut(duration: 0.3)) {
                             scrollProxy.scrollTo("scrollTop", anchor: .top)
                         }
-                    }) {
-                        Image(systemName: "arrow.up.circle.fill")
-                            .font(.system(size: 28))
-                            .foregroundColor(.secondary.opacity(0.5))
-                            .shadow(color: .black.opacity(0.2), radius: 3)
                     }
-                    .buttonStyle(.plain)
-                    .help("Back to top")
                     .padding(16)
                 }
             }
@@ -166,7 +158,7 @@ struct ClipGridView: View {
                             ratingHeader(section.title)
                         } else {
                             Text(section.title)
-                                .font(.system(size: 20, weight: .bold))
+                                .font(.system(size: 15, weight: .semibold))
                         }
                         
                         Text("\(section.clips.count)")
@@ -290,5 +282,33 @@ struct ClipGridView: View {
             }
         )
         .id(clip.id)
+    }
+}
+
+// MARK: - Back to Top Button
+
+private struct BackToTopButton: View {
+    let action: () -> Void
+    @State private var isHovered = false
+    
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 5) {
+                Image(systemName: "arrow.up")
+                    .font(.system(size: 12, weight: .semibold))
+                Text("Top")
+                    .font(.system(size: 11, weight: .semibold))
+            }
+            .foregroundColor(isHovered ? .white : .secondary)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(isHovered ? Color.accentColor : Color(nsColor: .controlBackgroundColor))
+            .cornerRadius(20)
+            .shadow(color: .black.opacity(0.15), radius: 4, y: 2)
+        }
+        .buttonStyle(.plain)
+        .help("Back to top")
+        .onHover { isHovered = $0 }
+        .animation(.easeInOut(duration: 0.15), value: isHovered)
     }
 }

@@ -232,15 +232,15 @@ struct ClipThumbnailView: View {
         let color = Self.scoreColors[clip.rating] ?? .gray
         return HStack(spacing: 3) {
             Text("\(clip.rating)")
-                .font(.system(size: 16, weight: .bold, design: .rounded))
+                .font(.system(size: 20, weight: .bold, design: .rounded))
             Text("★")
-                .font(.system(size: 13))
+                .font(.system(size: 15))
         }
         .foregroundColor(.white)
-        .padding(.horizontal, 10)
-        .padding(.vertical, 5)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
         .background(color)
-        .cornerRadius(8)
+        .cornerRadius(10)
         .shadow(color: .black.opacity(0.3), radius: 3, y: 1)
     }
     

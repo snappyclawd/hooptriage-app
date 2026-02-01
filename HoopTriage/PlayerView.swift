@@ -1,8 +1,49 @@
 import SwiftUI
 import AVKit
+import AppKit
 
 /// Playback speed levels for JKL scrubbing
 private let speedLevels: [Float] = [1, 2, 4, 8]
+
+// MARK: - Trackpad Scroll Scrub
+
+/// NSView overlay that captures two-finger trackpad scroll events for scrubbing
+struct TrackpadScrubOverlay: NSViewRepresentable {
+    let onScrub: (CGFloat) -> Void  // delta in points (positive = right/forward)
+    
+    func makeNSView(context: Context) -> TrackpadScrubView {
+        let view = TrackpadScrubView()
+        view.onScrub = onScrub
+        return view
+    }
+    
+    func updateNSView(_ nsView: TrackpadScrubView, context: Context) {
+        nsView.onScrub = onScrub
+    }
+    
+    class TrackpadScrubView: NSView {
+        var onScrub: ((CGFloat) -> Void)?
+        
+        override var acceptsFirstResponder: Bool { false }
+        
+        override func scrollWheel(with event: NSEvent) {
+            // Only handle trackpad (momentum) scrolling, not mouse wheel
+            if event.phase != .none || event.momentumPhase != .none {
+                let delta = event.scrollingDeltaX
+                if abs(delta) > 0.5 {
+                    onScrub?(delta)
+                }
+            } else {
+                super.scrollWheel(with: event)
+            }
+        }
+        
+        // Pass through mouse events so the video player underneath still works
+        override func hitTest(_ point: NSPoint) -> NSView? {
+            return nil  // transparent to clicks
+        }
+    }
+}
 
 /// Expanded video player with JKL scrubbing and keyboard controls
 struct PlayerView: View {
@@ -34,11 +75,19 @@ struct PlayerView: View {
             
             Divider()
             
-            // Video player
+            // Video player with trackpad scrub overlay
             if let player = player {
                 VideoPlayer(player: player)
                     .aspectRatio(16/9, contentMode: .fit)
                     .cornerRadius(0)
+                    .overlay(
+                        TrackpadScrubOverlay { delta in
+                            // Convert trackpad scroll delta to time offset
+                            // ~200 points of scroll ≈ 1 second of scrub
+                            let timeOffset = Double(delta) / 200.0
+                            trackpadScrub(by: timeOffset)
+                        }
+                    )
             }
             
             // Custom scrub bar
@@ -329,6 +378,24 @@ struct PlayerView: View {
         
         // Native frame stepping — hardware-optimized for both directions
         player.currentItem?.step(byCount: forward ? 1 : -1)
+    }
+    
+    /// Two-finger trackpad scrub — pauses playback and scrubs by time offset
+    private func trackpadScrub(by timeOffset: Double) {
+        guard let player = player else { return }
+        
+        // Pause if playing
+        if isPlaying {
+            player.pause()
+            playbackDirection = 0
+            speedIndex = 0
+            isPlaying = false
+        }
+        
+        let current = CMTimeGetSeconds(player.currentTime())
+        let target = max(0, min(current + timeOffset, clip.duration))
+        currentTime = target
+        player.seek(to: CMTime(seconds: target, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero)
     }
     
     /// Jump forward/backward by seconds

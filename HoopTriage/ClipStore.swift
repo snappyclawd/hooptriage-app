@@ -308,6 +308,11 @@ class ClipStore: ObservableObject {
     
     // MARK: - Undo / Redo
     
+    /// Push an undo action (also accessible from views that manage their own operations)
+    func pushUndoAction(_ action: UndoAction) {
+        pushUndo(action)
+    }
+    
     private func pushUndo(_ action: UndoAction) {
         undoStack.append(action)
         redoStack.removeAll()

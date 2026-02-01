@@ -114,36 +114,35 @@ class ClipStore: ObservableObject {
         isLoading = true
         loadingProgress = 0
         
-        Task.detached { [weak self] in
+        Task { [weak self] in
             guard let self = self else { return }
             
-            let fm = FileManager.default
-            guard let enumerator = fm.enumerator(
-                at: url,
-                includingPropertiesForKeys: [.isRegularFileKey],
-                options: [.skipsHiddenFiles]
-            ) else {
-                await MainActor.run { self.isLoading = false }
-                return
-            }
-            
-            var videoURLs: [URL] = []
-            while let fileURL = enumerator.nextObject() as? URL {
-                let ext = fileURL.pathExtension.lowercased()
-                if supportedExtensions.contains(ext) {
-                    videoURLs.append(fileURL)
+            // Enumerate files off the main actor
+            let videoURLs: [URL] = await Task.detached {
+                let fm = FileManager.default
+                guard let enumerator = fm.enumerator(
+                    at: url,
+                    includingPropertiesForKeys: [.isRegularFileKey],
+                    options: [.skipsHiddenFiles]
+                ) else { return [URL]() }
+                
+                var urls: [URL] = []
+                while let fileURL = enumerator.nextObject() as? URL {
+                    let ext = fileURL.pathExtension.lowercased()
+                    if supportedExtensions.contains(ext) {
+                        urls.append(fileURL)
+                    }
                 }
-            }
+                urls.sort { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending }
+                return urls
+            }.value
             
-            videoURLs.sort { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending }
-            
-            // Filter out already-loaded URLs
-            let currentURLs = await MainActor.run { self.loadedURLs }
-            let newURLs = videoURLs.filter { !currentURLs.contains($0) }
+            // Filter out already-loaded URLs (on MainActor since self is @MainActor)
+            let newURLs = videoURLs.filter { !self.loadedURLs.contains($0) }
             
             let total = newURLs.count
             guard total > 0 else {
-                await MainActor.run { self.isLoading = false }
+                self.isLoading = false
                 return
             }
             
@@ -151,21 +150,15 @@ class ClipStore: ObservableObject {
             
             for (index, fileURL) in newURLs.enumerated() {
                 let clip = await Clip.create(url: fileURL)
-                
-                await MainActor.run {
-                    self.clips.append(clip)
-                    self.loadedURLs.insert(fileURL)
-                    self.loadingProgress = Double(index + 1) / Double(total)
-                    addedIDs.append(clip.id)
-                }
+                self.clips.append(clip)
+                self.loadedURLs.insert(fileURL)
+                self.loadingProgress = Double(index + 1) / Double(total)
+                addedIDs.append(clip.id)
             }
             
-            await MainActor.run {
-                self.isLoading = false
-                // Record undo action for the batch add
-                if !addedIDs.isEmpty {
-                    self.pushUndo(.addClips(clipIDs: addedIDs))
-                }
+            self.isLoading = false
+            if !addedIDs.isEmpty {
+                self.pushUndo(.addClips(clipIDs: addedIDs))
             }
         }
     }
@@ -284,10 +277,9 @@ class ClipStore: ObservableObject {
             clips.removeAll { $0.id == clip.id }
             loadedURLs.remove(clip.url)
             
-        case .addClips(let clipIDs):
-            // Re-add (we'd need the actual clips... store them)
-            // For simplicity, addClips redo is a no-op if clips are gone
-            // This is an edge case — typically you undo an add then redo it
+        case .addClips:
+            // Re-add would need the actual clips stored — edge case.
+            // Typically you undo an add (removes clips) then redo isn't critical.
             break
         }
         

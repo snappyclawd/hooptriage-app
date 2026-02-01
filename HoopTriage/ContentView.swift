@@ -3,7 +3,7 @@ import UniformTypeIdentifiers
 
 /// Main app view
 struct ContentView: View {
-    @StateObject private var store = ClipStore()
+    @EnvironmentObject var store: ClipStore
     @State private var isDragTargeted = false
     @State private var audioEnabled = false
     
@@ -34,15 +34,6 @@ struct ContentView: View {
         .background(Color(nsColor: .windowBackgroundColor))
         .onDrop(of: [.fileURL], isTargeted: $isDragTargeted) { providers in
             handleDrop(providers)
-        }
-        // Undo: Cmd+Z, Redo: Cmd+Shift+Z
-        .onKeyPress(characters: .init(charactersIn: "z"), modifiers: [.command]) { _ in
-            store.undo()
-            return .handled
-        }
-        .onKeyPress(characters: .init(charactersIn: "z"), modifiers: [.command, .shift]) { _ in
-            store.redo()
-            return .handled
         }
     }
     

@@ -16,6 +16,10 @@
 		AA000007 /* ClipStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000016 /* ClipStore.swift */; };
 		AA000008 /* PlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000017 /* PlayerView.swift */; };
 		AA000009 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA000018 /* Assets.xcassets */; };
+		AA00000A /* ExportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001A /* ExportView.swift */; };
+		AA00000B /* AudioTriageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001B /* AudioTriageView.swift */; };
+		AA00000C /* AudioAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001C /* AudioAnalyzer.swift */; };
+		AA00000D /* TagPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001D /* TagPickerView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -30,6 +34,10 @@
 		AA000017 /* PlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerView.swift; sourceTree = "<group>"; };
 		AA000018 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		AA000019 /* HoopTriage.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = HoopTriage.entitlements; sourceTree = "<group>"; };
+		AA00001A /* ExportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportView.swift; sourceTree = "<group>"; };
+		AA00001B /* AudioTriageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioTriageView.swift; sourceTree = "<group>"; };
+		AA00001C /* AudioAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioAnalyzer.swift; sourceTree = "<group>"; };
+		AA00001D /* TagPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagPickerView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -62,6 +70,10 @@
 				AA000015 /* ThumbnailGenerator.swift */,
 				AA000016 /* ClipStore.swift */,
 				AA000017 /* PlayerView.swift */,
+				AA00001A /* ExportView.swift */,
+				AA00001B /* AudioTriageView.swift */,
+				AA00001C /* AudioAnalyzer.swift */,
+				AA00001D /* TagPickerView.swift */,
 				AA000018 /* Assets.xcassets */,
 				AA000019 /* HoopTriage.entitlements */,
 			);
@@ -148,6 +160,10 @@
 				AA000006 /* ThumbnailGenerator.swift in Sources */,
 				AA000007 /* ClipStore.swift in Sources */,
 				AA000008 /* PlayerView.swift in Sources */,
+				AA00000A /* ExportView.swift in Sources */,
+				AA00000B /* AudioTriageView.swift in Sources */,
+				AA00000C /* AudioAnalyzer.swift in Sources */,
+				AA00000D /* TagPickerView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

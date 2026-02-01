@@ -377,7 +377,7 @@ struct ClipThumbnailView: View {
                     .padding(.horizontal, 8)
                     .padding(.vertical, 3)
                     .background(tagColor(for: tag))
-                    .cornerRadius(10)
+                    .clipShape(Capsule())
             }
             
             Image(systemName: "tag")
@@ -386,90 +386,14 @@ struct ClipThumbnailView: View {
                 .onTapGesture { showTagPicker.toggle() }
         }
         .popover(isPresented: $showTagPicker, arrowEdge: .bottom) {
-            tagPickerContent
+            TagPickerView(
+                availableTags: availableTags,
+                selectedTags: clip.tags,
+                onToggleTag: onToggleTag,
+                onAddTag: onAddTag,
+                onDismiss: { showTagPicker = false }
+            )
         }
-    }
-    
-    private var tagPickerContent: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            ForEach(availableTags, id: \.self) { tag in
-                Button(action: {
-                    onToggleTag(tag)
-                }) {
-                    HStack {
-                        Image(systemName: clip.tags.contains(tag) ? "checkmark.circle.fill" : "circle")
-                            .font(.system(size: 12))
-                            .foregroundColor(clip.tags.contains(tag) ? tagColor(for: tag) : .secondary.opacity(0.4))
-                        Circle()
-                            .fill(tagColor(for: tag))
-                            .frame(width: 8, height: 8)
-                        Text(tag)
-                            .font(.system(size: 12))
-                        Spacer()
-                    }
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-            }
-            
-            Divider()
-            
-            HStack(spacing: 4) {
-                TextField("New tag...", text: $newTagText)
-                    .textFieldStyle(.plain)
-                    .font(.system(size: 12))
-                    .onSubmit {
-                        let tag = newTagText.trimmingCharacters(in: .whitespaces)
-                        if !tag.isEmpty {
-                            onAddTag(tag)
-                            onToggleTag(tag)
-                            newTagText = ""
-                        }
-                    }
-                
-                Button(action: {
-                    let tag = newTagText.trimmingCharacters(in: .whitespaces)
-                    if !tag.isEmpty {
-                        onAddTag(tag)
-                        onToggleTag(tag)
-                        newTagText = ""
-                    }
-                }) {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.system(size: 14))
-                        .foregroundColor(.accentColor)
-                }
-                .buttonStyle(.plain)
-                .disabled(newTagText.trimmingCharacters(in: .whitespaces).isEmpty)
-            }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            
-            if !clip.tags.isEmpty {
-                Divider()
-                Button(action: {
-                    for tag in clip.tags {
-                        onRemoveTag(tag)
-                    }
-                    showTagPicker = false
-                }) {
-                    HStack {
-                        Image(systemName: "xmark.circle")
-                            .font(.system(size: 10))
-                        Text("Clear all tags")
-                            .font(.system(size: 12))
-                    }
-                    .foregroundColor(.red)
-                }
-                .buttonStyle(.plain)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-            }
-        }
-        .padding(6)
-        .frame(width: 200)
     }
     
     // MARK: - Helpers

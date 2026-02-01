@@ -88,6 +88,14 @@ struct ContentView: View {
                 }
                 .frame(width: 110)
                 
+                // Group toggle
+                Picker("Group", selection: $store.groupMode) {
+                    ForEach(GroupMode.allCases, id: \.self) { mode in
+                        Text(mode.rawValue).tag(mode)
+                    }
+                }
+                .frame(width: 130)
+                
                 // Grid size slider (1-5 columns, small left, big right)
                 HStack(spacing: 4) {
                     Image(systemName: "square.grid.4x3.fill")

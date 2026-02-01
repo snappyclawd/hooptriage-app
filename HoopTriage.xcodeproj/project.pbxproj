@@ -16,7 +16,6 @@
 		AA000007 /* ClipStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000016 /* ClipStore.swift */; };
 		AA000008 /* PlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000017 /* PlayerView.swift */; };
 		AA000009 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA000018 /* Assets.xcassets */; };
-		AA00000A /* TagPill.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001A /* TagPill.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -31,7 +30,6 @@
 		AA000017 /* PlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerView.swift; sourceTree = "<group>"; };
 		AA000018 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		AA000019 /* HoopTriage.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = HoopTriage.entitlements; sourceTree = "<group>"; };
-		AA00001A /* TagPill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagPill.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -66,7 +64,6 @@
 				AA000017 /* PlayerView.swift */,
 				AA000018 /* Assets.xcassets */,
 				AA000019 /* HoopTriage.entitlements */,
-				AA00001A /* TagPill.swift */,
 			);
 			path = HoopTriage;
 			sourceTree = "<group>";
@@ -151,7 +148,6 @@
 				AA000006 /* ThumbnailGenerator.swift in Sources */,
 				AA000007 /* ClipStore.swift in Sources */,
 				AA000008 /* PlayerView.swift in Sources */,
-				AA00000A /* TagPill.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

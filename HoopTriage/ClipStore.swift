@@ -27,7 +27,7 @@ let defaultTags = [
 /// A single undoable action
 enum UndoAction: CustomStringConvertible {
     case setRating(clipID: UUID, oldRating: Int, newRating: Int)
-    case setCategory(clipID: UUID, oldCategory: String?, newCategory: String?)
+    case toggleTag(clipID: UUID, tag: String, wasAdded: Bool)  // wasAdded: true = tag was added, false = tag was removed
     case removeClip(clip: Clip, index: Int)
     case addClips(clipIDs: [UUID])
     
@@ -35,8 +35,8 @@ enum UndoAction: CustomStringConvertible {
         switch self {
         case .setRating(_, let old, let new):
             return new == 0 ? "Clear Rating" : "Rate \(old)→\(new)★"
-        case .setCategory(_, _, let new):
-            return new == nil ? "Remove Tag" : "Tag '\(new!)'"
+        case .toggleTag(_, let tag, let wasAdded):
+            return wasAdded ? "Add '\(tag)'" : "Remove '\(tag)'"
         case .removeClip(let clip, _):
             return "Remove '\(clip.filename)'"
         case .addClips(let ids):
@@ -64,19 +64,16 @@ class ClipStore: ObservableObject {
     @Published var undoStack: [UndoAction] = []
     @Published var redoStack: [UndoAction] = []
     
-    /// Human-readable description of next undo action
     var undoDescription: String? {
         undoStack.last.map { "Undo \($0.description)" }
     }
     
-    /// Human-readable description of next redo action
     var redoDescription: String? {
         redoStack.last.map { "Redo \($0.description)" }
     }
     
     let thumbnailGenerator = ThumbnailGenerator()
     
-    /// Track URLs already loaded to prevent duplicates
     private var loadedURLs: Set<URL> = []
     
     var sortedAndFilteredClips: [Clip] {
@@ -87,7 +84,7 @@ class ClipStore: ObservableObject {
         }
         
         if let tag = filterTag {
-            result = result.filter { $0.category == tag }
+            result = result.filter { $0.tags.contains(tag) }
         }
         
         switch sortOrder {
@@ -102,15 +99,14 @@ class ClipStore: ObservableObject {
         return result
     }
     
-    /// Tags currently in use by clips
+    /// All tags currently in use by at least one clip
     var usedTags: [String] {
-        let tags = Set(clips.compactMap { $0.category })
-        return availableTags.filter { tags.contains($0) }
+        let allUsed = clips.reduce(into: Set<String>()) { $0.formUnion($1.tags) }
+        return availableTags.filter { allUsed.contains($0) }
     }
     
-    // MARK: - Add Folder (additive — never replaces)
+    // MARK: - Add Folder (additive)
     
-    /// Add clips from a directory (skips duplicates already loaded)
     func addFolder(_ url: URL) {
         isLoading = true
         loadingProgress = 0
@@ -118,7 +114,6 @@ class ClipStore: ObservableObject {
         Task { [weak self] in
             guard let self = self else { return }
             
-            // Enumerate files off the main actor
             let videoURLs: [URL] = await Task.detached {
                 let fm = FileManager.default
                 guard let enumerator = fm.enumerator(
@@ -138,7 +133,6 @@ class ClipStore: ObservableObject {
                 return urls
             }.value
             
-            // Filter out already-loaded URLs (on MainActor since self is @MainActor)
             let newURLs = videoURLs.filter { !self.loadedURLs.contains($0) }
             
             let total = newURLs.count
@@ -164,13 +158,12 @@ class ClipStore: ObservableObject {
         }
     }
     
-    /// Add a single clip (skips if already loaded)
     func addClip(url: URL) {
         let ext = url.pathExtension.lowercased()
         guard supportedExtensions.contains(ext) else { return }
         guard !loadedURLs.contains(url) else { return }
         
-        loadedURLs.insert(url) // Mark immediately to prevent double-adds
+        loadedURLs.insert(url)
         Task {
             let clip = await Clip.create(url: url)
             clips.append(clip)
@@ -178,9 +171,8 @@ class ClipStore: ObservableObject {
         }
     }
     
-    // MARK: - Remove Clip (soft delete — file stays on disk)
+    // MARK: - Remove Clip
     
-    /// Remove a clip from the app (does NOT delete the file)
     func removeClip(id: UUID) {
         guard let index = clips.firstIndex(where: { $0.id == id }) else { return }
         let clip = clips[index]
@@ -191,7 +183,6 @@ class ClipStore: ObservableObject {
     
     // MARK: - Rating & Tags (with undo)
     
-    /// Update a clip's rating (toggle off if same rating)
     func setRating(_ rating: Int, for clipID: UUID) {
         guard let index = clips.firstIndex(where: { $0.id == clipID }) else { return }
         let oldRating = clips[index].rating
@@ -200,15 +191,27 @@ class ClipStore: ObservableObject {
         pushUndo(.setRating(clipID: clipID, oldRating: oldRating, newRating: newRating))
     }
     
-    /// Update a clip's category
-    func setCategory(_ category: String?, for clipID: UUID) {
+    /// Toggle a tag on a clip (add if missing, remove if present)
+    func toggleTag(_ tag: String, for clipID: UUID) {
         guard let index = clips.firstIndex(where: { $0.id == clipID }) else { return }
-        let oldCategory = clips[index].category
-        clips[index].category = category
-        pushUndo(.setCategory(clipID: clipID, oldCategory: oldCategory, newCategory: category))
+        if clips[index].tags.contains(tag) {
+            clips[index].tags.remove(tag)
+            pushUndo(.toggleTag(clipID: clipID, tag: tag, wasAdded: false))
+        } else {
+            clips[index].tags.insert(tag)
+            pushUndo(.toggleTag(clipID: clipID, tag: tag, wasAdded: true))
+        }
     }
     
-    /// Add a new tag to available tags
+    /// Remove a specific tag from a clip
+    func removeTag(_ tag: String, for clipID: UUID) {
+        guard let index = clips.firstIndex(where: { $0.id == clipID }) else { return }
+        if clips[index].tags.contains(tag) {
+            clips[index].tags.remove(tag)
+            pushUndo(.toggleTag(clipID: clipID, tag: tag, wasAdded: false))
+        }
+    }
+    
     func addTag(_ tag: String) {
         if !availableTags.contains(tag) {
             availableTags.append(tag)
@@ -219,9 +222,7 @@ class ClipStore: ObservableObject {
     
     private func pushUndo(_ action: UndoAction) {
         undoStack.append(action)
-        redoStack.removeAll() // new action invalidates redo history
-        
-        // Cap undo history at 100
+        redoStack.removeAll()
         if undoStack.count > 100 {
             undoStack.removeFirst(undoStack.count - 100)
         }
@@ -236,19 +237,23 @@ class ClipStore: ObservableObject {
                 clips[index].rating = oldRating
             }
             
-        case .setCategory(let clipID, let oldCategory, _):
+        case .toggleTag(let clipID, let tag, let wasAdded):
             if let index = clips.firstIndex(where: { $0.id == clipID }) {
-                clips[index].category = oldCategory
+                if wasAdded {
+                    // It was added, so undo = remove
+                    clips[index].tags.remove(tag)
+                } else {
+                    // It was removed, so undo = add back
+                    clips[index].tags.insert(tag)
+                }
             }
             
         case .removeClip(let clip, let index):
-            // Re-insert at original position (clamped)
             let insertAt = min(index, clips.count)
             clips.insert(clip, at: insertAt)
             loadedURLs.insert(clip.url)
             
         case .addClips(let clipIDs):
-            // Remove the clips that were added
             let idSet = Set(clipIDs)
             let removed = clips.filter { idSet.contains($0.id) }
             clips.removeAll { idSet.contains($0.id) }
@@ -269,9 +274,13 @@ class ClipStore: ObservableObject {
                 clips[index].rating = newRating
             }
             
-        case .setCategory(let clipID, _, let newCategory):
+        case .toggleTag(let clipID, let tag, let wasAdded):
             if let index = clips.firstIndex(where: { $0.id == clipID }) {
-                clips[index].category = newCategory
+                if wasAdded {
+                    clips[index].tags.insert(tag)
+                } else {
+                    clips[index].tags.remove(tag)
+                }
             }
             
         case .removeClip(let clip, _):
@@ -279,22 +288,20 @@ class ClipStore: ObservableObject {
             loadedURLs.remove(clip.url)
             
         case .addClips:
-            // Re-add would need the actual clips stored — edge case.
-            // Typically you undo an add (removes clips) then redo isn't critical.
             break
         }
         
         undoStack.append(action)
     }
     
-    // MARK: - Folder Picker (additive)
+    // MARK: - Folder Picker
     
     func pickFolder() {
         let panel = NSOpenPanel()
         panel.canChooseFiles = true
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = true
-        panel.allowedContentTypes = [] // Allow all for directories
+        panel.allowedContentTypes = []
         panel.message = "Select folders or video files to add"
         panel.prompt = "Add"
         
@@ -316,7 +323,7 @@ class ClipStore: ObservableObject {
     
     var totalClips: Int { clips.count }
     var ratedClips: Int { clips.filter { $0.rating > 0 }.count }
-    var taggedClips: Int { clips.filter { $0.category != nil }.count }
+    var taggedClips: Int { clips.filter { !$0.tags.isEmpty }.count }
     var totalDuration: Double { clips.reduce(0) { $0 + $1.duration } }
     
     var totalDurationFormatted: String {

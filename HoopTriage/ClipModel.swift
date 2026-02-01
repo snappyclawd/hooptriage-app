@@ -12,7 +12,7 @@ struct Clip: Identifiable, Hashable {
     let fileSize: Int64
     
     var rating: Int = 0  // 0 = unrated, 1-5 = user rating
-    var category: String? = nil
+    var tags: Set<String> = []
     
     /// Create a clip by async-loading metadata from the file
     static func create(url: URL) async -> Clip {

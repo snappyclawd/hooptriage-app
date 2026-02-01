@@ -10,7 +10,8 @@ struct ClipThumbnailView: View {
     let availableTags: [String]
     let audioEnabled: Bool
     let onRate: (Int) -> Void
-    let onTag: (String?) -> Void
+    let onToggleTag: (String) -> Void
+    let onRemoveTag: (String) -> Void
     let onAddTag: (String) -> Void
     let onHoverChange: (Bool) -> Void
     let onOpen: () -> Void
@@ -166,7 +167,7 @@ struct ClipThumbnailView: View {
                 HStack(spacing: 6) {
                     starRating
                     Spacer()
-                    tagButton
+                    tagDisplay
                 }
             }
             .padding(.horizontal, 8)
@@ -269,25 +270,26 @@ struct ClipThumbnailView: View {
         return star <= clip.rating ? .yellow : Color.gray.opacity(0.25)
     }
     
-    // MARK: - Tag Picker
+    // MARK: - Tag Display & Picker
     
-    private var tagButton: some View {
-        Group {
-            if let tag = clip.category {
+    private var tagDisplay: some View {
+        HStack(spacing: 4) {
+            // Show tag pills (compact)
+            ForEach(Array(clip.tags).sorted(), id: \.self) { tag in
                 Text(tag)
-                    .font(.system(size: 10, weight: .medium))
+                    .font(.system(size: 9, weight: .medium))
                     .foregroundColor(.white)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
                     .background(tagColor(for: tag))
-                    .cornerRadius(10)
-                    .onTapGesture { showTagPicker.toggle() }
-            } else {
-                Image(systemName: "tag")
-                    .font(.system(size: 12))
-                    .foregroundColor(.secondary)
-                    .onTapGesture { showTagPicker.toggle() }
+                    .cornerRadius(8)
             }
+            
+            // Add tag button
+            Image(systemName: "tag")
+                .font(.system(size: 11))
+                .foregroundColor(.secondary)
+                .onTapGesture { showTagPicker.toggle() }
         }
         .popover(isPresented: $showTagPicker, arrowEdge: .bottom) {
             tagPickerContent
@@ -298,25 +300,18 @@ struct ClipThumbnailView: View {
         VStack(alignment: .leading, spacing: 4) {
             ForEach(availableTags, id: \.self) { tag in
                 Button(action: {
-                    if clip.category == tag {
-                        onTag(nil)
-                    } else {
-                        onTag(tag)
-                    }
-                    showTagPicker = false
+                    onToggleTag(tag)
                 }) {
                     HStack {
+                        Image(systemName: clip.tags.contains(tag) ? "checkmark.circle.fill" : "circle")
+                            .font(.system(size: 12))
+                            .foregroundColor(clip.tags.contains(tag) ? tagColor(for: tag) : .secondary.opacity(0.4))
                         Circle()
                             .fill(tagColor(for: tag))
                             .frame(width: 8, height: 8)
                         Text(tag)
                             .font(.system(size: 12))
                         Spacer()
-                        if clip.category == tag {
-                            Image(systemName: "checkmark")
-                                .font(.system(size: 10))
-                                .foregroundColor(.accentColor)
-                        }
                     }
                     .contentShape(Rectangle())
                 }
@@ -335,9 +330,8 @@ struct ClipThumbnailView: View {
                         let tag = newTagText.trimmingCharacters(in: .whitespaces)
                         if !tag.isEmpty {
                             onAddTag(tag)
-                            onTag(tag)
+                            onToggleTag(tag)
                             newTagText = ""
-                            showTagPicker = false
                         }
                     }
                 
@@ -345,9 +339,8 @@ struct ClipThumbnailView: View {
                     let tag = newTagText.trimmingCharacters(in: .whitespaces)
                     if !tag.isEmpty {
                         onAddTag(tag)
-                        onTag(tag)
+                        onToggleTag(tag)
                         newTagText = ""
-                        showTagPicker = false
                     }
                 }) {
                     Image(systemName: "plus.circle.fill")
@@ -360,16 +353,18 @@ struct ClipThumbnailView: View {
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
             
-            if clip.category != nil {
+            if !clip.tags.isEmpty {
                 Divider()
                 Button(action: {
-                    onTag(nil)
+                    for tag in clip.tags {
+                        onRemoveTag(tag)
+                    }
                     showTagPicker = false
                 }) {
                     HStack {
                         Image(systemName: "xmark.circle")
                             .font(.system(size: 10))
-                        Text("Remove tag")
+                        Text("Clear all tags")
                             .font(.system(size: 12))
                     }
                     .foregroundColor(.red)
@@ -380,7 +375,7 @@ struct ClipThumbnailView: View {
             }
         }
         .padding(6)
-        .frame(width: 180)
+        .frame(width: 200)
     }
     
     // MARK: - Helpers

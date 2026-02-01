@@ -8,7 +8,8 @@ private let speedLevels: [Float] = [1, 2, 4, 8]
 struct PlayerView: View {
     let clip: Clip
     let onRate: (Int) -> Void
-    let onTag: (String?) -> Void
+    let onToggleTag: (String) -> Void
+    let onRemoveTag: (String) -> Void
     let availableTags: [String]
     let onAddTag: (String) -> Void
     let onClose: () -> Void
@@ -408,30 +409,33 @@ struct PlayerView: View {
     // MARK: - Tag Button
     
     private var playerTagButton: some View {
-        Group {
-            if let tag = clip.category {
+        HStack(spacing: 4) {
+            // Show existing tags as pills
+            ForEach(Array(clip.tags).sorted(), id: \.self) { tag in
                 Text(tag)
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.system(size: 10, weight: .medium))
                     .foregroundColor(.white)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 4)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
                     .background(tagColor(for: tag))
-                    .cornerRadius(10)
-                    .onTapGesture { showTagPicker.toggle() }
-            } else {
-                HStack(spacing: 4) {
-                    Image(systemName: "tag")
-                        .font(.system(size: 12))
+                    .cornerRadius(8)
+            }
+            
+            // Add/edit tag button
+            HStack(spacing: 4) {
+                Image(systemName: "tag")
+                    .font(.system(size: 12))
+                if clip.tags.isEmpty {
                     Text("Tag")
                         .font(.system(size: 11))
                 }
-                .foregroundColor(.secondary)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 4)
-                .background(Color.gray.opacity(0.1))
-                .cornerRadius(10)
-                .onTapGesture { showTagPicker.toggle() }
             }
+            .foregroundColor(.secondary)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(Color.gray.opacity(0.1))
+            .cornerRadius(10)
+            .onTapGesture { showTagPicker.toggle() }
         }
         .popover(isPresented: $showTagPicker, arrowEdge: .top) {
             playerTagPickerContent
@@ -442,21 +446,18 @@ struct PlayerView: View {
         VStack(alignment: .leading, spacing: 4) {
             ForEach(availableTags, id: \.self) { tag in
                 Button(action: {
-                    onTag(clip.category == tag ? nil : tag)
-                    showTagPicker = false
+                    onToggleTag(tag)
                 }) {
                     HStack {
+                        Image(systemName: clip.tags.contains(tag) ? "checkmark.circle.fill" : "circle")
+                            .font(.system(size: 12))
+                            .foregroundColor(clip.tags.contains(tag) ? tagColor(for: tag) : .secondary.opacity(0.4))
                         Circle()
                             .fill(tagColor(for: tag))
                             .frame(width: 8, height: 8)
                         Text(tag)
                             .font(.system(size: 12))
                         Spacer()
-                        if clip.category == tag {
-                            Image(systemName: "checkmark")
-                                .font(.system(size: 10))
-                                .foregroundColor(.accentColor)
-                        }
                     }
                     .contentShape(Rectangle())
                 }
@@ -475,9 +476,8 @@ struct PlayerView: View {
                         let tag = newTagText.trimmingCharacters(in: .whitespaces)
                         if !tag.isEmpty {
                             onAddTag(tag)
-                            onTag(tag)
+                            onToggleTag(tag)
                             newTagText = ""
-                            showTagPicker = false
                         }
                     }
                 
@@ -485,9 +485,8 @@ struct PlayerView: View {
                     let tag = newTagText.trimmingCharacters(in: .whitespaces)
                     if !tag.isEmpty {
                         onAddTag(tag)
-                        onTag(tag)
+                        onToggleTag(tag)
                         newTagText = ""
-                        showTagPicker = false
                     }
                 }) {
                     Image(systemName: "plus.circle.fill")
@@ -500,16 +499,18 @@ struct PlayerView: View {
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
             
-            if clip.category != nil {
+            if !clip.tags.isEmpty {
                 Divider()
                 Button(action: {
-                    onTag(nil)
+                    for tag in clip.tags {
+                        onRemoveTag(tag)
+                    }
                     showTagPicker = false
                 }) {
                     HStack {
                         Image(systemName: "xmark.circle")
                             .font(.system(size: 10))
-                        Text("Remove tag")
+                        Text("Clear all tags")
                             .font(.system(size: 12))
                     }
                     .foregroundColor(.red)
@@ -520,7 +521,7 @@ struct PlayerView: View {
             }
         }
         .padding(6)
-        .frame(width: 180)
+        .frame(width: 200)
     }
     
     // MARK: - Helpers

@@ -48,7 +48,8 @@ struct ClipGridView: View {
                 PlayerView(
                     clip: clip,
                     onRate: { rating in store.setRating(rating, for: clip.id) },
-                    onTag: { tag in store.setCategory(tag, for: clip.id) },
+                    onToggleTag: { tag in store.toggleTag(tag, for: clip.id) },
+                    onRemoveTag: { tag in store.removeTag(tag, for: clip.id) },
                     availableTags: store.availableTags,
                     onAddTag: { tag in store.addTag(tag) }
                 ) {
@@ -211,10 +212,16 @@ struct ClipGridView: View {
             }
             
         case .category:
+            // A clip with multiple tags appears in each tag group
             var groups: [String: [Clip]] = [:]
             for clip in clips {
-                let key = clip.category ?? "Untagged"
-                groups[key, default: []].append(clip)
+                if clip.tags.isEmpty {
+                    groups["Untagged", default: []].append(clip)
+                } else {
+                    for tag in clip.tags {
+                        groups[tag, default: []].append(clip)
+                    }
+                }
             }
             let sorted = groups.sorted { a, b in
                 if a.key == "Untagged" { return false }
@@ -241,8 +248,11 @@ struct ClipGridView: View {
             onRate: { rating in
                 store.setRating(rating, for: clip.id)
             },
-            onTag: { tag in
-                store.setCategory(tag, for: clip.id)
+            onToggleTag: { tag in
+                store.toggleTag(tag, for: clip.id)
+            },
+            onRemoveTag: { tag in
+                store.removeTag(tag, for: clip.id)
             },
             onAddTag: { tag in
                 store.addTag(tag)

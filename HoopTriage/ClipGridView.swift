@@ -43,6 +43,7 @@ struct ClipGridView: View {
                 )
                 .focusable()
                 .focused($isGridFocused)
+                .focusEffectDisabled()
                 .overlay(alignment: .bottomTrailing) {
                     BackToTopButton {
                         withAnimation(.easeInOut(duration: 0.3)) {

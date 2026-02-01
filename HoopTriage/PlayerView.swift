@@ -102,6 +102,7 @@ struct PlayerView: View {
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .shadow(color: .black.opacity(0.25), radius: 30, y: 10)
         .focused($isFocused)
+        .focusEffectDisabled()
         .onKeyPress(.space) { togglePlayPause(); return .handled }
         .onKeyPress(characters: .init(charactersIn: "l")) { _ in handleL(); return .handled }
         .onKeyPress(characters: .init(charactersIn: "j")) { _ in handleJ(); return .handled }

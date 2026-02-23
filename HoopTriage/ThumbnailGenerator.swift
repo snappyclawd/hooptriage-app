@@ -83,6 +83,17 @@ actor ThumbnailGenerator {
         return await thumbnail(for: url, at: duration * 0.25, size: size)
     }
     
+    /// Check if a poster is already cached (actor-isolated, but fast path).
+    func cachedPoster(for url: URL, duration: Double, size: CGSize = CGSize(width: 480, height: 270)) -> NSImage? {
+        let time = duration * 0.25
+        let cacheKey = "\(url.path)_\(String(format: "%.2f", time))_\(Int(size.width))"
+        if let cached = cache[cacheKey] {
+            touchCacheEntry(cacheKey)
+            return cached
+        }
+        return nil
+    }
+    
     // MARK: - Asset Pool Management
     
     private func getOrCreateAsset(for url: URL) -> AVURLAsset {

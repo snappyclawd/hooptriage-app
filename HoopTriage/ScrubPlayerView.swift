@@ -111,7 +111,9 @@ final class ScrubPlayerPool: ObservableObject {
     
     /// Coalesced seek: if a seek is in flight, store the latest time
     /// and re-seek when the current one completes.
-    func seek(_ player: AVPlayer, to time: Double) {
+    /// The onFirstFrame callback fires once when the first seek completes —
+    /// used to hide the poster and reveal the live player.
+    func seek(_ player: AVPlayer, to time: Double, onFirstFrame: (() -> Void)? = nil) {
         guard let url = playerURLs[ObjectIdentifier(player)] else { return }
         
         if isSeeking[url] == true {
@@ -131,6 +133,8 @@ final class ScrubPlayerPool: ObservableObject {
             Task { @MainActor in
                 guard let self = self else { return }
                 self.isSeeking[url] = false
+                
+                onFirstFrame?()
                 
                 if let pending = self.pendingSeekTime[url] {
                     self.pendingSeekTime.removeValue(forKey: url)

@@ -35,6 +35,7 @@ struct ClipThumbnailView: View {
     @State private var isCardHovered = false
     // AVPlayer-based scrub — only created on hover-enter
     @State private var scrubPlayer: AVPlayer? = nil
+    @State private var scrubPlayerReady = false
     
     private let scrubSize = CGSize(width: 480, height: 270)
     private let cardRadius: CGFloat = 14
@@ -54,8 +55,8 @@ struct ClipThumbnailView: View {
                 ZStack {
                     Color.black
                     
-                    // Static poster image (shown when NOT hovering)
-                    if !isHovering, let img = posterImage {
+                    // Static poster — stays visible until scrub player has its first frame
+                    if let img = posterImage, (!isHovering || !scrubPlayerReady) {
                         Image(nsImage: img)
                             .resizable()
                             .aspectRatio(contentMode: .fill)
@@ -63,7 +64,7 @@ struct ClipThumbnailView: View {
                             .clipped()
                     }
                     
-                    // AVPlayerLayer scrub view (shown ONLY when hovering)
+                    // AVPlayerLayer scrub view (layered on top, hidden until ready)
                     if isHovering, let player = scrubPlayer {
                         ScrubPlayerView(player: player)
                             .frame(width: geo.size.width, height: geo.size.height)
@@ -196,10 +197,13 @@ struct ClipThumbnailView: View {
                         
                         // On hover enter: get a player from the pool
                         if !wasHovering {
+                            scrubPlayerReady = false
                             scrubPlayer = scrubPlayerPool.player(for: clip.url)
-                            // Seek to initial position immediately
+                            // First seek — reveal player layer once frame is decoded
                             if let player = scrubPlayer {
-                                scrubPlayerPool.seek(player, to: currentTime)
+                                scrubPlayerPool.seek(player, to: currentTime) {
+                                    scrubPlayerReady = true
+                                }
                             }
                             if audioEnabled { prepareAudio() }
                         } else {
@@ -219,6 +223,7 @@ struct ClipThumbnailView: View {
                     case .ended:
                         isHovering = false
                         scrubPlayer = nil
+                        scrubPlayerReady = false
                         hoverProgress = 0
                         stopAudio()
                     }
@@ -273,7 +278,10 @@ struct ClipThumbnailView: View {
         .onChange(of: showTagPicker) { _, show in
             if !show { showTagPickerBinding = false }
         }
-        .task {
+        .task(id: clip.id) {
+            // Skip if we already have a poster (e.g. view was recreated by LazyVGrid
+            // but the @State was preserved or re-initialized quickly)
+            guard posterImage == nil else { return }
             posterImage = await thumbnailGenerator.poster(
                 for: clip.url,
                 duration: clip.duration,

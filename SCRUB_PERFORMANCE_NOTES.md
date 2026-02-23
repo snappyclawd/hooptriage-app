@@ -30,13 +30,15 @@
 
 ## Still open
 
-### Black flash on hover-enter
-The poster image hides before `AVPlayerLayer` renders its first decoded frame. Current mitigation: keep poster visible until `onFirstFrame` callback fires from the first coalesced seek. Still flickers because SwiftUI's view diffing may introduce a frame gap.
+### Black flash on hover-enter — FIXED
+The poster image used to hide before `AVPlayerLayer` rendered its first decoded frame. The original mitigation (keep SwiftUI poster visible until `onFirstFrame` callback) still flickered because SwiftUI's view diffing introduced a frame gap.
 
-**Likely fix:** Move the poster image into `ScrubPlayerNSView` as a `CALayer` positioned behind the `AVPlayerLayer`. On hover-enter, the poster CALayer is already showing. When AVPlayerLayer renders its first frame, hide the poster CALayer. This keeps the entire transition in Core Animation — no SwiftUI diffing involved.
+**Fix applied:** Moved the poster into `ScrubPlayerNSView` as a `CALayer` positioned behind the `AVPlayerLayer`. The `ScrubPlayerView` is now always present (not conditional on hover), with poster and player layers both in Core Animation. On hover-enter, the poster CALayer is already showing. When AVPlayerLayer renders its first frame (`scrubPlayerReady = true`), the poster layer hides via `CATransaction` — no SwiftUI diffing involved. The `Color.black` background and conditional `Image(nsImage:)` have been removed from `ClipThumbnailView`.
 
 ### Virtualized grid
 `LazyVGrid` handles basic lazy loading but keeps many off-screen views alive. With 500+ clips, this could cause memory pressure and scroll jank. A true virtualized grid (like TanStack Virtual for web) would only maintain views for visible clips + a small buffer. Not yet implemented — current scroll performance is acceptable but could improve.
 
-### Scroll flicker
-When scrolling fast, `LazyVGrid` destroys and recreates `ClipThumbnailView` instances. The `@State posterImage` resets to nil, causing a brief black frame before the `ThumbnailGenerator` cache returns the poster. The cache hit is fast (actor hop) but not synchronous. Moving poster display into an `NSView` layer that reads from a shared synchronous cache would eliminate this.
+### Scroll flicker — FIXED
+When scrolling fast, `LazyVGrid` destroys and recreates `ClipThumbnailView` instances. The `@State posterImage` resets to nil. The actor-isolated LRU cache requires an async hop, so there was always at least one black frame.
+
+**Fix applied:** Added a `nonisolated` `NSCache<NSURL, NSImage>` (`posterCache`) to `ThumbnailGenerator`. It's populated whenever `poster()` generates an image. In `ClipThumbnailView`, the poster passed to `ScrubPlayerView` uses a sync fallback: `posterImage ?? thumbnailGenerator.cachedPosterSync(for:duration:size:)`. This reads from `NSCache` (thread-safe, no await, no actor hop) so the `ScrubPlayerNSView` poster layer has content from the very first frame — even when `@State posterImage` is nil after view recreation.

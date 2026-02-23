@@ -4,18 +4,44 @@ import AVKit
 
 // MARK: - ScrubPlayerNSView
 
-/// Lightweight NSView hosting an AVPlayerLayer for GPU-rendered video frames.
-/// No mouse tracking — that stays in SwiftUI's onContinuousHover.
+/// Lightweight NSView hosting an AVPlayerLayer for GPU-rendered video frames,
+/// with a poster CALayer on top for flicker-free hover transitions.
+///
+/// The poster layer covers the player layer and stays visible until
+/// `AVPlayerLayer.isReadyForDisplay` becomes true (KVO). This guarantees
+/// the poster only hides once a real decoded frame is composited — not just
+/// when the seek completes. Both layers live in Core Animation, so the
+/// handoff is a single-frame, synchronous operation with no SwiftUI diffing.
 final class ScrubPlayerNSView: NSView {
     
     let playerLayer = AVPlayerLayer()
+    let posterLayer = CALayer()
+    
+    private var readyObservation: NSKeyValueObservation?
     
     override init(frame: CGRect) {
         super.init(frame: frame)
         wantsLayer = true
+        layer?.backgroundColor = NSColor.black.cgColor
+        
+        // Player behind poster
         playerLayer.videoGravity = .resizeAspectFill
         playerLayer.backgroundColor = NSColor.black.cgColor
         layer?.addSublayer(playerLayer)
+        
+        // Poster on top — covers the black player layer until a frame is ready
+        posterLayer.contentsGravity = .resizeAspectFill
+        posterLayer.masksToBounds = true
+        layer?.addSublayer(posterLayer)
+        
+        // KVO: hide poster the instant AVPlayerLayer has a composited frame
+        readyObservation = playerLayer.observe(\.isReadyForDisplay, options: [.new]) { [weak self] layer, change in
+            guard let self, change.newValue == true else { return }
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            self.posterLayer.isHidden = true
+            CATransaction.commit()
+        }
     }
     
     required init?(coder: NSCoder) {
@@ -27,11 +53,26 @@ final class ScrubPlayerNSView: NSView {
         CATransaction.begin()
         CATransaction.setDisableActions(true)
         playerLayer.frame = bounds
+        posterLayer.frame = bounds
         CATransaction.commit()
     }
     
     func setPlayer(_ player: AVPlayer?) {
+        // When clearing the player (hover-leave), re-show poster immediately
+        if player == nil && playerLayer.player != nil {
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            posterLayer.isHidden = false
+            CATransaction.commit()
+        }
         playerLayer.player = player
+    }
+    
+    func setPosterImage(_ image: NSImage?) {
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        posterLayer.contents = image?.cgImage(forProposedRect: nil, context: nil, hints: nil)
+        CATransaction.commit()
     }
 }
 
@@ -39,15 +80,18 @@ final class ScrubPlayerNSView: NSView {
 
 struct ScrubPlayerView: NSViewRepresentable {
     let player: AVPlayer?
+    let posterImage: NSImage?
     
     func makeNSView(context: Context) -> ScrubPlayerNSView {
         let view = ScrubPlayerNSView(frame: .zero)
         view.setPlayer(player)
+        view.setPosterImage(posterImage)
         return view
     }
     
     func updateNSView(_ nsView: ScrubPlayerNSView, context: Context) {
         nsView.setPlayer(player)
+        nsView.setPosterImage(posterImage)
     }
 }
 

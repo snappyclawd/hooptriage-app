@@ -1,14 +1,14 @@
-# 🏀 HoopTriage
+# RushCut
 
-Native macOS app for triaging basketball footage. GPU-accelerated scrubbing, instant review.
+Native macOS app for triaging video footage. GPU-accelerated scrubbing, instant review.
 
 ## The Problem
 
-You filmed a basketball tournament. You have 1,200+ short clips. Sorting them takes an entire day.
+You filmed a tournament, event, or production. You have 1,200+ short clips. Sorting them takes an entire day.
 
 ## The Solution
 
-Drag a folder into HoopTriage. Instantly see all your clips in a grid. Hover to scrub through any clip — GPU-accelerated, no pre-processing, no waiting. Rate clips, filter, sort, and get back to editing.
+Drag a folder into RushCut. Instantly see all your clips in a grid. Hover to scrub through any clip — GPU-accelerated, no pre-processing, no waiting. Rate clips, filter, sort, and get back to editing.
 
 ## Features
 
@@ -27,9 +27,9 @@ Drag a folder into HoopTriage. Instantly see all your clips in a grid. Hover to 
 ## Build & Run
 
 ```bash
-git clone https://github.com/snappyclawd/hooptriage-app.git
-cd hooptriage-app
-open HoopTriage.xcodeproj
+git clone https://github.com/snappyclawd/rushcut-app.git
+cd rushcut-app
+open RushCut.xcodeproj
 ```
 
 In Xcode, hit **⌘R** to build and run.

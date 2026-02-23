@@ -103,7 +103,7 @@ struct ExportView: View {
                     }
                 }
                 
-                Text("A \"HoopTriage\" folder will be created inside.")
+                Text("A \"RushCut\" folder will be created inside.")
                     .font(.system(size: 11))
                     .foregroundColor(.secondary.opacity(0.7))
             }
@@ -237,7 +237,7 @@ struct ExportView: View {
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = false
-        panel.message = "Choose where to create the HoopTriage export folder"
+        panel.message = "Choose where to create the RushCut export folder"
         panel.prompt = "Select"
         
         if panel.runModal() == .OK {

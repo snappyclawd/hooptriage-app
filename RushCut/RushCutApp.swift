@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct HoopTriageApp: App {
+struct RushCutApp: App {
     @StateObject private var store = ClipStore()
     
     var body: some Scene {

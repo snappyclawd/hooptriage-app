@@ -287,6 +287,7 @@ struct ClipGridView: View {
             ),
             thumbnailGenerator: store.thumbnailGenerator,
             scrubPlayerPool: store.scrubPlayerPool,
+            audioScrubEngine: store.audioScrubEngine,
             availableTags: store.availableTags,
             audioEnabled: audioEnabled,
             onRate: { rating in

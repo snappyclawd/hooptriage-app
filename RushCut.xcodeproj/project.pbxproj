@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		AA000001 /* HoopTriageApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000010 /* HoopTriageApp.swift */; };
+		AA000001 /* RushCutApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000010 /* RushCutApp.swift */; };
 		AA000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000011 /* ContentView.swift */; };
 		AA000003 /* ClipGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000012 /* ClipGridView.swift */; };
 		AA000004 /* ClipThumbnailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000013 /* ClipThumbnailView.swift */; };
@@ -21,11 +21,12 @@
 		AA00000C /* AudioAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001C /* AudioAnalyzer.swift */; };
 		AA00000D /* TagPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001D /* TagPickerView.swift */; };
 		AA00000E /* ScrubPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001E /* ScrubPlayerView.swift */; };
+		AA00000F /* AudioScrubEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001F /* AudioScrubEngine.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		AA000000 /* HoopTriage.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HoopTriage.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		AA000010 /* HoopTriageApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HoopTriageApp.swift; sourceTree = "<group>"; };
+		AA000000 /* RushCut.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RushCut.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA000010 /* RushCutApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RushCutApp.swift; sourceTree = "<group>"; };
 		AA000011 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		AA000012 /* ClipGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipGridView.swift; sourceTree = "<group>"; };
 		AA000013 /* ClipThumbnailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipThumbnailView.swift; sourceTree = "<group>"; };
@@ -34,12 +35,13 @@
 		AA000016 /* ClipStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipStore.swift; sourceTree = "<group>"; };
 		AA000017 /* PlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerView.swift; sourceTree = "<group>"; };
 		AA000018 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		AA000019 /* HoopTriage.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = HoopTriage.entitlements; sourceTree = "<group>"; };
+		AA000019 /* RushCut.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = RushCut.entitlements; sourceTree = "<group>"; };
 		AA00001A /* ExportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportView.swift; sourceTree = "<group>"; };
 		AA00001B /* AudioTriageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioTriageView.swift; sourceTree = "<group>"; };
 		AA00001C /* AudioAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioAnalyzer.swift; sourceTree = "<group>"; };
 		AA00001D /* TagPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagPickerView.swift; sourceTree = "<group>"; };
 		AA00001E /* ScrubPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrubPlayerView.swift; sourceTree = "<group>"; };
+		AA00001F /* AudioScrubEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioScrubEngine.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -56,15 +58,15 @@
 		AA200000 = {
 			isa = PBXGroup;
 			children = (
-				AA200001 /* HoopTriage */,
+				AA200001 /* RushCut */,
 				AA200002 /* Products */,
 			);
 			sourceTree = "<group>";
 		};
-		AA200001 /* HoopTriage */ = {
+		AA200001 /* RushCut */ = {
 			isa = PBXGroup;
 			children = (
-				AA000010 /* HoopTriageApp.swift */,
+				AA000010 /* RushCutApp.swift */,
 				AA000011 /* ContentView.swift */,
 				AA000012 /* ClipGridView.swift */,
 				AA000013 /* ClipThumbnailView.swift */,
@@ -77,16 +79,17 @@
 				AA00001C /* AudioAnalyzer.swift */,
 				AA00001D /* TagPickerView.swift */,
 				AA00001E /* ScrubPlayerView.swift */,
+				AA00001F /* AudioScrubEngine.swift */,
 				AA000018 /* Assets.xcassets */,
-				AA000019 /* HoopTriage.entitlements */,
+				AA000019 /* RushCut.entitlements */,
 			);
-			path = HoopTriage;
+			path = RushCut;
 			sourceTree = "<group>";
 		};
 		AA200002 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				AA000000 /* HoopTriage.app */,
+				AA000000 /* RushCut.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -94,9 +97,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		AA300000 /* HoopTriage */ = {
+		AA300000 /* RushCut */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = AA500000 /* Build configuration list for PBXNativeTarget "HoopTriage" */;
+			buildConfigurationList = AA500000 /* Build configuration list for PBXNativeTarget "RushCut" */;
 			buildPhases = (
 				AA400000 /* Sources */,
 				AA100000 /* Frameworks */,
@@ -106,9 +109,9 @@
 			);
 			dependencies = (
 			);
-			name = HoopTriage;
-			productName = HoopTriage;
-			productReference = AA000000 /* HoopTriage.app */;
+			name = RushCut;
+			productName = RushCut;
+			productReference = AA000000 /* RushCut.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -121,7 +124,7 @@
 				LastSwiftUpdateCheck = 1500;
 				LastUpgradeCheck = 1500;
 			};
-			buildConfigurationList = AA500002 /* Build configuration list for PBXProject "HoopTriage" */;
+			buildConfigurationList = AA500002 /* Build configuration list for PBXProject "RushCut" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -134,7 +137,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				AA300000 /* HoopTriage */,
+				AA300000 /* RushCut */,
 			);
 		};
 /* End PBXProject section */
@@ -155,7 +158,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AA000001 /* HoopTriageApp.swift in Sources */,
+				AA000001 /* RushCutApp.swift in Sources */,
 				AA000002 /* ContentView.swift in Sources */,
 				AA000003 /* ClipGridView.swift in Sources */,
 				AA000004 /* ClipThumbnailView.swift in Sources */,
@@ -168,6 +171,7 @@
 				AA00000C /* AudioAnalyzer.swift in Sources */,
 				AA00000D /* TagPickerView.swift in Sources */,
 				AA00000E /* ScrubPlayerView.swift in Sources */,
+				AA00000F /* AudioScrubEngine.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -226,17 +230,18 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = HoopTriage/HoopTriage.entitlements;
+				CODE_SIGN_ENTITLEMENTS = RushCut/RushCut.entitlements;
+				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
-				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_HARDENED_RUNTIME = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.video";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 snappyclawd";
 				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.snappyclawd.HoopTriage;
+				PRODUCT_BUNDLE_IDENTIFIER = com.snappyclawd.RushCut;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -247,17 +252,18 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = HoopTriage/HoopTriage.entitlements;
+				CODE_SIGN_ENTITLEMENTS = RushCut/RushCut.entitlements;
+				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
-				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_HARDENED_RUNTIME = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.video";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 snappyclawd";
 				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.snappyclawd.HoopTriage;
+				PRODUCT_BUNDLE_IDENTIFIER = com.snappyclawd.RushCut;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -267,7 +273,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		AA500000 /* Build configuration list for PBXNativeTarget "HoopTriage" */ = {
+		AA500000 /* Build configuration list for PBXNativeTarget "RushCut" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				AA700002 /* Debug */,
@@ -276,7 +282,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		AA500002 /* Build configuration list for PBXProject "HoopTriage" */ = {
+		AA500002 /* Build configuration list for PBXProject "RushCut" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				AA700000 /* Debug */,

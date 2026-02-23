@@ -86,6 +86,7 @@ class ClipStore: ObservableObject {
     
     let thumbnailGenerator = ThumbnailGenerator()
     let scrubPlayerPool = ScrubPlayerPool()
+    let audioScrubEngine = AudioScrubEngine()
     
     private var loadedURLs: Set<URL> = []
     
@@ -488,20 +489,73 @@ class ClipStore: ObservableObject {
         return "\(mins)m \(secs)s"
     }
     
+    // MARK: - Export Preview Tree
+    
+    /// A folder in the export preview tree
+    struct ExportFolder: Identifiable {
+        let id = UUID()
+        let name: String
+        let files: [String]
+    }
+    
+    /// Live preview of the export folder structure.
+    /// Returns nil when there's nothing to export (no clips with rating or tags).
+    var exportPreviewTree: [ExportFolder]? {
+        let ratingFolderNames: [Int: String] = [
+            5: "5-star",
+            4: "4-star",
+            3: "3-star",
+            2: "2-star",
+            1: "1-star",
+            0: "Unrated",
+        ]
+        
+        // Only show clips that would be exported (have rating or tags)
+        let exportable = clips.filter { $0.effectiveRating > 0 || !$0.tags.isEmpty }
+        guard !exportable.isEmpty else { return nil }
+        
+        // Group by effective rating, sorted highest first
+        var grouped: [Int: [String]] = [:]
+        for clip in exportable {
+            let rating = clip.effectiveRating
+            grouped[rating, default: []].append(clip.filename)
+        }
+        
+        // Sort filenames within each group
+        for key in grouped.keys {
+            grouped[key]?.sort { $0.localizedStandardCompare($1) == .orderedAscending }
+        }
+        
+        // Build folders in descending rating order
+        var folders: [ExportFolder] = []
+        for rating in stride(from: 5, through: 0, by: -1) {
+            guard let files = grouped[rating], !files.isEmpty else { continue }
+            let name = ratingFolderNames[rating] ?? "Unrated"
+            folders.append(ExportFolder(name: name, files: files))
+        }
+        
+        return folders
+    }
+    
+    /// Count of clips that would be skipped (untouched) on export
+    var exportSkippedCount: Int {
+        clips.filter { $0.effectiveRating == 0 && $0.tags.isEmpty }.count
+    }
+    
     // MARK: - Export
     
     /// Export clips to a destination folder, organized by rating
     func exportClips(to baseURL: URL, skipUntouched: Bool) async -> ExportResult {
         let fm = FileManager.default
         
-        // Create the HoopTriage export folder
-        let exportFolder = baseURL.appendingPathComponent("HoopTriage")
+        // Create the RushCut export folder
+        let exportFolder = baseURL.appendingPathComponent("RushCut")
         
         // If it already exists, make a unique name
         var finalFolder = exportFolder
         var counter = 1
         while fm.fileExists(atPath: finalFolder.path) {
-            finalFolder = baseURL.appendingPathComponent("HoopTriage \(counter)")
+            finalFolder = baseURL.appendingPathComponent("RushCut \(counter)")
             counter += 1
         }
         
@@ -615,7 +669,7 @@ class ClipStore: ObservableObject {
         ]
         
         if let jsonData = try? JSONSerialization.data(withJSONObject: metadata, options: [.prettyPrinted, .sortedKeys]) {
-            let jsonURL = finalFolder.appendingPathComponent("hooptriage.json")
+            let jsonURL = finalFolder.appendingPathComponent("rushcut.json")
             try? jsonData.write(to: jsonURL)
         }
         
@@ -637,7 +691,7 @@ class ClipStore: ObservableObject {
             csv += "\(filename),\(rating),\(escapedTags),\(duration),\(resolution),\(folder),\(escapedPath)\n"
         }
         
-        let csvURL = finalFolder.appendingPathComponent("hooptriage.csv")
+        let csvURL = finalFolder.appendingPathComponent("rushcut.csv")
         try? csv.write(to: csvURL, atomically: true, encoding: .utf8)
         
         // Remove moved clips from the store (they're no longer at their original paths)

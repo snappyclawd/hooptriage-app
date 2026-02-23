@@ -6,6 +6,31 @@ import AppKit
 /// and cancellation support.
 actor ThumbnailGenerator {
     
+    // MARK: - Synchronous Poster Cache (thread-safe, no await)
+    
+    /// Shared NSCache for poster images that can be read synchronously from
+    /// any thread/actor without an await hop. Populated whenever a poster is
+    /// generated. This eliminates the black-frame flash when LazyVGrid
+    /// destroys and recreates ClipThumbnailView during fast scrolling.
+    /// NSCache is thread-safe and handles memory pressure automatically.
+    nonisolated let posterCache = NSCache<NSURL, NSImage>()
+    
+    /// Synchronous poster lookup — call from SwiftUI body without await.
+    /// Returns nil only if the poster has never been generated.
+    nonisolated func cachedPosterSync(for url: URL, duration: Double, size: CGSize = CGSize(width: 480, height: 270)) -> NSImage? {
+        let key = posterCacheKey(url: url, duration: duration, size: size)
+        return posterCache.object(forKey: key as NSURL)
+    }
+    
+    /// Build the canonical cache key URL for a poster.
+    nonisolated private func posterCacheKey(url: URL, duration: Double, size: CGSize) -> URL {
+        // Encode the same parameters the actor cache uses, but as a URL
+        // so we can use it as an NSCache key (NSURL conforms to NSCopying).
+        let time = duration * 0.25
+        let keyString = "\(url.absoluteString)_\(String(format: "%.2f", time))_\(Int(size.width))"
+        return URL(string: keyString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? keyString) ?? url
+    }
+    
     // MARK: - LRU Cache
     
     /// Max number of thumbnails to keep in memory.
@@ -80,7 +105,15 @@ actor ThumbnailGenerator {
     
     /// Generate a poster (thumbnail at 25% of duration)
     func poster(for url: URL, duration: Double, size: CGSize = CGSize(width: 480, height: 270)) async -> NSImage? {
-        return await thumbnail(for: url, at: duration * 0.25, size: size)
+        let image = await thumbnail(for: url, at: duration * 0.25, size: size)
+        // Seed the synchronous cache so subsequent view recreations
+        // (LazyVGrid destroying/recreating views on fast scroll) get
+        // the poster immediately without an async hop.
+        if let image {
+            let key = posterCacheKey(url: url, duration: duration, size: size)
+            posterCache.setObject(image, forKey: key as NSURL)
+        }
+        return image
     }
     
     /// Check if a poster is already cached (actor-isolated, but fast path).

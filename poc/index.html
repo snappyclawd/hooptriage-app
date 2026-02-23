@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RushCut POC v3 — Frame Strip Scrubbing</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0a;
+      --surface: #141414;
+      --surface-hover: #1e1e1e;
+      --border: #2a2a2a;
+      --text: #e5e5e5;
+      --text-muted: #888;
+      --accent: #f97316;
+      --star-empty: #333;
+      --star-filled: #f97316;
+      --rating-1: #ef4444;
+      --rating-2: #f97316;
+      --rating-3: #eab308;
+      --rating-4: #22c55e;
+      --rating-5: #3b82f6;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 16px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .toolbar h1 { font-size: 15px; font-weight: 600; letter-spacing: -0.02em; }
+    .toolbar .stats { font-size: 12px; color: var(--text-muted); margin-left: auto; }
+    .toolbar button, .toolbar label {
+      background: var(--surface-hover); border: 1px solid var(--border); color: var(--text);
+      padding: 5px 12px; border-radius: 6px; font-size: 12px; cursor: pointer;
+    }
+    .toolbar button:hover, .toolbar label:hover { background: #252525; }
+    .toolbar select {
+      background: var(--surface-hover); border: 1px solid var(--border); color: var(--text);
+      padding: 5px 8px; border-radius: 6px; font-size: 12px;
+    }
+
+    .drop-zone {
+      flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 16px; border: 2px dashed var(--border); border-radius: 12px; margin: 24px;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .drop-zone.drag-over { border-color: var(--accent); background: rgba(249, 115, 22, 0.05); }
+    .drop-zone h2 { font-size: 18px; font-weight: 500; }
+    .drop-zone p { color: var(--text-muted); font-size: 13px; }
+    .drop-zone button {
+      background: var(--accent); border: none; color: #fff;
+      padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer;
+    }
+
+    .grid-container { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 12px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 8px;
+    }
+
+    .clip-card {
+      position: relative; border-radius: 8px; overflow: hidden;
+      background: var(--surface); border: 1px solid var(--border); cursor: pointer;
+    }
+    .clip-card:hover { border-color: #444; }
+    .clip-card.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+
+    .video-wrapper {
+      position: relative; aspect-ratio: 16 / 9; background: #000; overflow: hidden;
+    }
+
+    /* The poster/scrub canvas fills the wrapper */
+    .video-wrapper canvas {
+      width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none;
+    }
+
+    .scrub-bar {
+      position: absolute; bottom: 0; left: 0; height: 3px;
+      background: var(--accent); pointer-events: none; z-index: 3; width: 0;
+    }
+    .duration-badge {
+      position: absolute; top: 6px; right: 6px; background: rgba(0,0,0,0.7); color: #fff;
+      font-size: 11px; padding: 2px 6px; border-radius: 4px;
+      font-variant-numeric: tabular-nums; pointer-events: none; z-index: 3;
+    }
+
+    .clip-info { padding: 6px 8px; display: flex; align-items: center; gap: 6px; }
+    .clip-name {
+      font-size: 11px; color: var(--text-muted); white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0;
+    }
+    .stars { display: flex; gap: 1px; flex-shrink: 0; }
+    .star { width: 16px; height: 16px; cursor: pointer; color: var(--star-empty); transition: color 0.1s; }
+    .star.filled { color: var(--star-filled); }
+    .star:hover { color: var(--accent); }
+
+    .rating-strip {
+      position: absolute; top: 0; left: 0; right: 0; height: 3px; pointer-events: none; z-index: 4;
+    }
+    .rating-strip.r1 { background: var(--rating-1); }
+    .rating-strip.r2 { background: var(--rating-2); }
+    .rating-strip.r3 { background: var(--rating-3); }
+    .rating-strip.r4 { background: var(--rating-4); }
+    .rating-strip.r5 { background: var(--rating-5); }
+
+    .player-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.9);
+      display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100;
+    }
+    .player-overlay video { max-width: 90vw; max-height: 75vh; border-radius: 8px; }
+    .player-controls {
+      margin-top: 12px; display: flex; align-items: center; gap: 16px;
+      color: var(--text-muted); font-size: 12px;
+    }
+    .player-timeline {
+      width: 60vw; height: 6px; background: var(--border);
+      border-radius: 3px; cursor: pointer; margin-top: 8px;
+    }
+    .player-timeline .fill { height: 100%; background: var(--accent); border-radius: 3px; pointer-events: none; }
+    .player-close-hint { position: absolute; top: 16px; right: 24px; color: var(--text-muted); font-size: 12px; }
+
+    .filter-bar { display: flex; gap: 4px; align-items: center; }
+    .filter-bar button { padding: 4px 10px; font-size: 11px; }
+    .filter-bar button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+    .grid-container::-webkit-scrollbar { width: 8px; }
+    .grid-container::-webkit-scrollbar-track { background: transparent; }
+    .grid-container::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+
+    .sort-group { display: flex; align-items: center; gap: 4px; }
+    .sort-group label { border: none; background: none; padding: 0; color: var(--text-muted); font-size: 11px; }
+
+    .loading-bar {
+      height: 2px; background: var(--accent); transition: width 0.2s;
+      position: fixed; top: 0; left: 0; z-index: 200;
+    }
+  </style>
+</head>
+<body>
+
+<div class="loading-bar" id="loadingBar" style="width:0; display:none;"></div>
+
+<div class="toolbar">
+  <h1>RushCut</h1>
+  <div class="filter-bar" id="filterBar">
+    <button class="active" data-filter="all">All</button>
+    <button data-filter="0">Unrated</button>
+    <button data-filter="1">1</button>
+    <button data-filter="2">2</button>
+    <button data-filter="3">3</button>
+    <button data-filter="4">4</button>
+    <button data-filter="5">5</button>
+  </div>
+  <div class="sort-group">
+    <label>Sort:</label>
+    <select id="sortSelect">
+      <option value="name">Name</option>
+      <option value="duration">Duration</option>
+      <option value="rating">Rating</option>
+    </select>
+  </div>
+  <span class="stats" id="stats"></span>
+</div>
+
+<div class="drop-zone" id="dropZone">
+  <h2>Drop a folder of video clips here</h2>
+  <p>Or click to select a folder</p>
+  <button id="pickFolder">Choose Folder</button>
+</div>
+
+<div class="grid-container" id="gridContainer" style="display:none;">
+  <div class="grid" id="grid"></div>
+</div>
+
+<div class="player-overlay" id="playerOverlay" style="display:none;">
+  <span class="player-close-hint"><kbd>Esc</kbd> close · <kbd>J</kbd><kbd>K</kbd><kbd>L</kbd> scrub · <kbd>,</kbd><kbd>.</kbd> frame · <kbd>1</kbd>-<kbd>5</kbd> rate</span>
+  <video id="playerVideo"></video>
+  <div class="player-timeline" id="playerTimeline">
+    <div class="fill" id="playerTimelineFill"></div>
+  </div>
+  <div class="player-controls" id="playerControls"></div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+// ARCHITECTURE v3: Frame-strip scrubbing
+//
+// The problem with video.currentTime seeking: H.264/HEVC keyframes
+// are typically 1-2s apart. Seeking to an arbitrary time requires
+// decoding from the nearest keyframe. This is inherently slow for
+// rapid mouse-driven scrubbing.
+//
+// Solution: On hover-enter, we use a SINGLE offscreen video element
+// to rapidly extract ~30 frames across the clip's duration into
+// an array of ImageBitmap objects. Scrubbing then just picks the
+// nearest pre-decoded frame and draws it on a canvas. 
+// ZERO seeking during mouse movement = instant scrub feel.
+//
+// The frame extraction happens progressively — first frames appear
+// within ~100ms, and the rest fill in as the decoder catches up.
+// ─────────────────────────────────────────────
+
+const SUPPORTED = new Set(['mov', 'mp4', 'm4v', 'webm']);
+const SCRUB_FRAMES = 60;  // number of frames to extract per clip
+const FRAME_W = 480;
+const FRAME_H = 270;
+
+const state = {
+  clips: [],
+  filter: 'all',
+  sort: 'name',
+  selectedIndex: -1,
+  expandedClip: null,
+  jklSpeed: 0,
+  speedLevels: [1, 2, 4, 8],
+};
+
+// DOM
+const dropZone = document.getElementById('dropZone');
+const gridContainer = document.getElementById('gridContainer');
+const grid = document.getElementById('grid');
+const statsEl = document.getElementById('stats');
+const filterBar = document.getElementById('filterBar');
+const sortSelect = document.getElementById('sortSelect');
+const playerOverlay = document.getElementById('playerOverlay');
+const playerVideo = document.getElementById('playerVideo');
+const playerTimeline = document.getElementById('playerTimeline');
+const playerTimelineFill = document.getElementById('playerTimelineFill');
+const playerControls = document.getElementById('playerControls');
+const loadingBar = document.getElementById('loadingBar');
+
+// ─────────────────────────────────────────────
+// Frame strip cache
+// Key: clip url → { frames: ImageBitmap[], extracting: bool, abortController }
+// ─────────────────────────────────────────────
+const frameCache = new Map();
+
+// Single offscreen video for frame extraction
+const extractVideo = document.createElement('video');
+extractVideo.muted = true;
+extractVideo.playsInline = true;
+extractVideo.preload = 'auto';
+
+// Offscreen canvas for grabbing frames
+const extractCanvas = new OffscreenCanvas(FRAME_W, FRAME_H);
+const extractCtx = extractCanvas.getContext('2d');
+
+// Current extraction state
+let currentExtraction = null; // { clipUrl, resolve, reject }
+
+async function extractFrames(clip) {
+  // Already cached?
+  const cached = frameCache.get(clip.url);
+  if (cached && cached.frames.length >= SCRUB_FRAMES) return cached.frames;
+
+  // Already extracting this clip? Return what we have so far
+  if (cached && cached.extracting) return cached.frames;
+
+  // Abort any in-flight extraction for a different clip
+  if (currentExtraction && currentExtraction.clipUrl !== clip.url) {
+    currentExtraction.abort = true;
+  }
+
+  const entry = { frames: [], extracting: true };
+  frameCache.set(clip.url, entry);
+
+  const extraction = { clipUrl: clip.url, abort: false };
+  currentExtraction = extraction;
+
+  return new Promise((resolve) => {
+    extractVideo.src = clip.url;
+
+    extractVideo.onloadeddata = async () => {
+      const dur = extractVideo.duration;
+      if (!dur || !isFinite(dur)) { entry.extracting = false; resolve(entry.frames); return; }
+
+      clip.duration = dur;
+
+      for (let i = 0; i < SCRUB_FRAMES; i++) {
+        if (extraction.abort) { entry.extracting = false; resolve(entry.frames); return; }
+
+        const time = (i / (SCRUB_FRAMES - 1)) * dur;
+
+        // Seek and wait
+        extractVideo.currentTime = time;
+        await new Promise((r) => { extractVideo.onseeked = r; });
+
+        if (extraction.abort) { entry.extracting = false; resolve(entry.frames); return; }
+
+        // Grab frame as ImageBitmap (very fast, no encoding)
+        extractCtx.drawImage(extractVideo, 0, 0, FRAME_W, FRAME_H);
+        const bitmap = await createImageBitmap(extractCanvas);
+        entry.frames.push(bitmap);
+      }
+
+      entry.extracting = false;
+      resolve(entry.frames);
+    };
+
+    extractVideo.onerror = () => { entry.extracting = false; resolve(entry.frames); };
+  });
+}
+
+// ─────────────────────────────────────────────
+// Poster generation (first frame, batched)
+// ─────────────────────────────────────────────
+const posterCanvas = document.createElement('canvas');
+posterCanvas.width = FRAME_W;
+posterCanvas.height = FRAME_H;
+const posterCtx = posterCanvas.getContext('2d');
+
+async function generatePoster(clip) {
+  return new Promise((resolve) => {
+    const vid = document.createElement('video');
+    vid.muted = true;
+    vid.preload = 'metadata';
+    vid.playsInline = true;
+    vid.src = clip.url;
+
+    vid.onloadeddata = () => {
+      vid.currentTime = Math.min(0.5, vid.duration * 0.1);
+    };
+
+    vid.onseeked = () => {
+      clip.duration = vid.duration;
+      posterCtx.drawImage(vid, 0, 0, FRAME_W, FRAME_H);
+      clip.posterDataUrl = posterCanvas.toDataURL('image/jpeg', 0.6);
+      vid.removeAttribute('src');
+      vid.load();
+      resolve();
+    };
+
+    vid.onerror = () => { clip.posterDataUrl = null; resolve(); };
+  });
+}
+
+async function generatePosters(clips) {
+  loadingBar.style.display = 'block';
+  for (let i = 0; i < clips.length; i += 4) {
+    await Promise.all(clips.slice(i, i + 4).map(c => generatePoster(c)));
+    loadingBar.style.width = Math.min(100, ((i + 4) / clips.length) * 100) + '%';
+    renderGrid();
+    updateStats();
+    await new Promise(r => setTimeout(r, 0));
+  }
+  loadingBar.style.display = 'none';
+}
+
+// ─────────────────────────────────────────────
+// Folder picking
+// ─────────────────────────────────────────────
+document.getElementById('pickFolder').addEventListener('click', async () => {
+  if ('showDirectoryPicker' in window) {
+    try {
+      const dirHandle = await window.showDirectoryPicker();
+      loadFiles(await collectFiles(dirHandle));
+    } catch (e) { if (e.name !== 'AbortError') console.error(e); }
+  } else {
+    const input = document.createElement('input');
+    input.type = 'file'; input.webkitdirectory = true; input.multiple = true;
+    input.onchange = () => loadFiles(Array.from(input.files));
+    input.click();
+  }
+});
+
+async function collectFiles(dirHandle) {
+  const files = [];
+  for await (const entry of dirHandle.values()) {
+    if (entry.kind === 'file') files.push(await entry.getFile());
+    else if (entry.kind === 'directory') files.push(...await collectFiles(entry));
+  }
+  return files;
+}
+
+dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', async (e) => {
+  e.preventDefault(); dropZone.classList.remove('drag-over');
+  const files = [];
+  for (const item of [...e.dataTransfer.items]) {
+    if (item.kind === 'file') {
+      const entry = item.webkitGetAsEntry?.();
+      if (entry) await traverseEntry(entry, files);
+      else { const f = item.getAsFile(); if (f) files.push(f); }
+    }
+  }
+  loadFiles(files);
+});
+
+function traverseEntry(entry, files) {
+  return new Promise((resolve) => {
+    if (entry.isFile) { entry.file((f) => { files.push(f); resolve(); }); }
+    else if (entry.isDirectory) {
+      const reader = entry.createReader();
+      const readAll = (acc = []) => {
+        reader.readEntries(async (batch) => {
+          if (!batch.length) { for (const e of acc) await traverseEntry(e, files); resolve(); }
+          else readAll([...acc, ...batch]);
+        });
+      };
+      readAll();
+    } else resolve();
+  });
+}
+
+function loadFiles(files) {
+  const vids = files.filter(f => SUPPORTED.has(f.name.split('.').pop().toLowerCase()))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  if (!vids.length) { alert('No supported video files found'); return; }
+
+  state.clips = vids.map(f => ({
+    file: f, url: URL.createObjectURL(f), name: f.name,
+    duration: 0, rating: 0, posterDataUrl: null,
+  }));
+
+  dropZone.style.display = 'none';
+  gridContainer.style.display = 'block';
+  renderGrid();
+  updateStats();
+  generatePosters(state.clips);
+}
+
+// ─────────────────────────────────────────────
+// Render grid
+// ─────────────────────────────────────────────
+function renderGrid() {
+  grid.innerHTML = '';
+  const filtered = getFilteredSorted();
+
+  filtered.forEach((clip) => {
+    const card = document.createElement('div');
+    card.className = 'clip-card';
+
+    if (clip.rating > 0) {
+      const strip = document.createElement('div');
+      strip.className = `rating-strip r${clip.rating}`;
+      card.appendChild(strip);
+    }
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'video-wrapper';
+
+    // Each card has its own canvas — lightweight, just shows a static image until hovered
+    const canvas = document.createElement('canvas');
+    canvas.width = FRAME_W;
+    canvas.height = FRAME_H;
+    const ctx = canvas.getContext('2d');
+
+    // Draw poster
+    if (clip.posterDataUrl) {
+      const img = new Image();
+      img.onload = () => ctx.drawImage(img, 0, 0, FRAME_W, FRAME_H);
+      img.src = clip.posterDataUrl;
+    }
+
+    const scrubBar = document.createElement('div');
+    scrubBar.className = 'scrub-bar';
+
+    const badge = document.createElement('div');
+    badge.className = 'duration-badge';
+    badge.textContent = clip.duration ? formatTime(clip.duration) : '--:--';
+
+    wrapper.appendChild(canvas);
+    wrapper.appendChild(scrubBar);
+    wrapper.appendChild(badge);
+
+    // ── HOVER ENTER: start extracting frames ──
+    let isHovering = false;
+
+    wrapper.addEventListener('mouseenter', () => {
+      isHovering = true;
+      // Fire and forget — frames will be available progressively
+      extractFrames(clip);
+    });
+
+    // ── MOUSEMOVE: pick nearest pre-decoded frame, draw on canvas ──
+    wrapper.addEventListener('mousemove', (e) => {
+      if (!isHovering) return;
+      const rect = wrapper.getBoundingClientRect();
+      const progress = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+
+      const cached = frameCache.get(clip.url);
+      const frames = cached ? cached.frames : [];
+
+      if (frames.length > 0) {
+        const idx = Math.min(Math.floor(progress * frames.length), frames.length - 1);
+        ctx.drawImage(frames[idx], 0, 0, FRAME_W, FRAME_H);
+      }
+
+      scrubBar.style.width = (progress * 100) + '%';
+      const dur = clip.duration;
+      if (dur) badge.textContent = formatTime(progress * dur) + ' / ' + formatTime(dur);
+    });
+
+    // ── HOVER LEAVE: show poster again ──
+    wrapper.addEventListener('mouseleave', () => {
+      isHovering = false;
+      scrubBar.style.width = '0';
+      badge.textContent = clip.duration ? formatTime(clip.duration) : '--:--';
+      // Redraw poster
+      if (clip.posterDataUrl) {
+        const img = new Image();
+        img.onload = () => ctx.drawImage(img, 0, 0, FRAME_W, FRAME_H);
+        img.src = clip.posterDataUrl;
+      }
+    });
+
+    wrapper.addEventListener('dblclick', () => openPlayer(clip));
+    card.appendChild(wrapper);
+
+    // Info bar
+    const info = document.createElement('div');
+    info.className = 'clip-info';
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'clip-name';
+    nameSpan.textContent = clip.name;
+    nameSpan.title = clip.name;
+    info.appendChild(nameSpan);
+    info.appendChild(createStars(clip));
+    card.appendChild(info);
+
+    card.addEventListener('click', (e) => {
+      if (e.detail === 2) return;
+      document.querySelectorAll('.clip-card.selected').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      state.selectedIndex = state.clips.indexOf(clip);
+    });
+
+    clip._el = card;
+    grid.appendChild(card);
+  });
+}
+
+function createStars(clip) {
+  const c = document.createElement('div');
+  c.className = 'stars';
+  for (let i = 1; i <= 5; i++) {
+    const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    s.setAttribute('viewBox', '0 0 20 20');
+    s.setAttribute('fill', 'currentColor');
+    s.classList.add('star');
+    if (i <= clip.rating) s.classList.add('filled');
+    const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    p.setAttribute('d', 'M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z');
+    s.appendChild(p);
+    s.addEventListener('click', (e) => {
+      e.stopPropagation();
+      clip.rating = clip.rating === i ? 0 : i;
+      renderGrid();
+    });
+    c.appendChild(s);
+  }
+  return c;
+}
+
+// ─────────────────────────────────────────────
+// Filter / Sort
+// ─────────────────────────────────────────────
+function getFilteredSorted() {
+  let clips = [...state.clips];
+  if (state.filter !== 'all') { const r = parseInt(state.filter); clips = clips.filter(c => c.rating === r); }
+  switch (state.sort) {
+    case 'name': clips.sort((a, b) => a.name.localeCompare(b.name)); break;
+    case 'duration': clips.sort((a, b) => a.duration - b.duration); break;
+    case 'rating': clips.sort((a, b) => b.rating - a.rating); break;
+  }
+  return clips;
+}
+
+filterBar.addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-filter]');
+  if (!btn) return;
+  state.filter = btn.dataset.filter;
+  filterBar.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderGrid(); updateStats();
+});
+sortSelect.addEventListener('change', () => { state.sort = sortSelect.value; renderGrid(); });
+
+function updateStats() {
+  const total = state.clips.length;
+  const rated = state.clips.filter(c => c.rating > 0).length;
+  const filtered = getFilteredSorted().length;
+  const showing = state.filter === 'all' ? '' : ` (showing ${filtered})`;
+  statsEl.textContent = `${total} clips${showing} \u2022 ${rated} rated`;
+}
+
+// ─────────────────────────────────────────────
+// Expanded player
+// ─────────────────────────────────────────────
+function openPlayer(clip) {
+  state.expandedClip = clip;
+  state.jklSpeed = 0;
+  playerVideo.src = clip.url;
+  playerVideo.currentTime = 0;
+  playerOverlay.style.display = 'flex';
+  playerVideo.play();
+  playerControls.textContent = clip.name;
+  playerVideo.ontimeupdate = () => {
+    if (playerVideo.duration)
+      playerTimelineFill.style.width = (playerVideo.currentTime / playerVideo.duration * 100) + '%';
+  };
+}
+function closePlayer() {
+  playerVideo.pause();
+  playerVideo.removeAttribute('src');
+  playerVideo.load();
+  playerOverlay.style.display = 'none';
+  state.expandedClip = null;
+  state.jklSpeed = 0;
+  stopReverseScrub();
+}
+playerTimeline.addEventListener('click', (e) => {
+  const rect = playerTimeline.getBoundingClientRect();
+  if (playerVideo.duration) playerVideo.currentTime = ((e.clientX - rect.left) / rect.width) * playerVideo.duration;
+});
+
+// ─────────────────────────────────────────────
+// Keyboard
+// ─────────────────────────────────────────────
+document.addEventListener('keydown', (e) => {
+  if (state.expandedClip) {
+    switch (e.key) {
+      case 'Escape': closePlayer(); return;
+      case 'l': case 'L':
+        if (state.jklSpeed < 0) state.jklSpeed = 0;
+        stopReverseScrub();
+        { const i = state.speedLevels.indexOf(state.jklSpeed);
+          state.jklSpeed = state.speedLevels[Math.min(i + 1, state.speedLevels.length - 1)]; }
+        playerVideo.playbackRate = state.jklSpeed; playerVideo.play(); break;
+      case 'j': case 'J':
+        if (state.jklSpeed > 0) state.jklSpeed = 0;
+        { const c = Math.abs(state.jklSpeed); const i = state.speedLevels.indexOf(c);
+          const s = state.speedLevels[Math.min(i + 1, state.speedLevels.length - 1)];
+          state.jklSpeed = -s; }
+        playerVideo.pause(); startReverseScrub(Math.abs(state.jklSpeed)); break;
+      case 'k': case 'K': state.jklSpeed = 0; playerVideo.pause(); stopReverseScrub(); break;
+      case ' ':
+        e.preventDefault();
+        if (playerVideo.paused) { state.jklSpeed = 1; playerVideo.playbackRate = 1; playerVideo.play(); }
+        else { state.jklSpeed = 0; playerVideo.pause(); stopReverseScrub(); } break;
+      case ',':
+        playerVideo.pause(); state.jklSpeed = 0; stopReverseScrub();
+        playerVideo.currentTime = Math.max(0, playerVideo.currentTime - 1/30); break;
+      case '.':
+        playerVideo.pause(); state.jklSpeed = 0; stopReverseScrub();
+        playerVideo.currentTime = Math.min(playerVideo.duration, playerVideo.currentTime + 1/30); break;
+      case 'ArrowLeft': e.preventDefault(); playerVideo.currentTime = Math.max(0, playerVideo.currentTime - 5); break;
+      case 'ArrowRight': e.preventDefault(); playerVideo.currentTime = Math.min(playerVideo.duration || 0, playerVideo.currentTime + 5); break;
+    }
+    if (e.key >= '1' && e.key <= '5' && !e.metaKey && !e.ctrlKey) {
+      const r = parseInt(e.key);
+      state.expandedClip.rating = state.expandedClip.rating === r ? 0 : r;
+      renderGrid();
+    }
+    return;
+  }
+
+  if (e.key >= '1' && e.key <= '5' && !e.metaKey && !e.ctrlKey && state.selectedIndex >= 0) {
+    const clip = state.clips[state.selectedIndex];
+    if (clip) { const r = parseInt(e.key); clip.rating = clip.rating === r ? 0 : r; renderGrid(); updateStats(); }
+  }
+  if (e.key === '0' && state.selectedIndex >= 0) { state.clips[state.selectedIndex].rating = 0; renderGrid(); updateStats(); }
+  if (e.key === 'ArrowRight' && state.selectedIndex < state.clips.length - 1) { e.preventDefault(); selectClipByIndex(state.selectedIndex + 1); }
+  if (e.key === 'ArrowLeft' && state.selectedIndex > 0) { e.preventDefault(); selectClipByIndex(state.selectedIndex - 1); }
+  if (e.key === 'Enter' && state.selectedIndex >= 0) openPlayer(state.clips[state.selectedIndex]);
+});
+
+function selectClipByIndex(idx) {
+  state.selectedIndex = idx;
+  document.querySelectorAll('.clip-card.selected').forEach(c => c.classList.remove('selected'));
+  const clip = state.clips[idx];
+  if (clip?._el) { clip._el.classList.add('selected'); clip._el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
+}
+
+let reverseInterval = null;
+function startReverseScrub(speed) {
+  stopReverseScrub();
+  reverseInterval = setInterval(() => {
+    if (playerVideo.currentTime > 0) playerVideo.currentTime = Math.max(0, playerVideo.currentTime - speed / 30);
+    else stopReverseScrub();
+  }, 1000 / 30);
+}
+function stopReverseScrub() { if (reverseInterval) { clearInterval(reverseInterval); reverseInterval = null; } }
+
+function formatTime(s) {
+  if (!s || !isFinite(s)) return '--:--';
+  return `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, '0')}`;
+}
+</script>
+
+</body>
+</html>

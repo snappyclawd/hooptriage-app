@@ -12,6 +12,7 @@ struct ClipThumbnailView: View {
     @Binding var showTagPickerBinding: Bool
     let thumbnailGenerator: ThumbnailGenerator
     let scrubPlayerPool: ScrubPlayerPool
+    let audioScrubEngine: AudioScrubEngine
     let availableTags: [String]
     let audioEnabled: Bool
     let onRate: (Int) -> Void
@@ -30,12 +31,10 @@ struct ClipThumbnailView: View {
     @State private var currentTime: Double = 0
     @State private var hoveredStar: Int = 0
     @State private var showTagPicker = false
-    @State private var audioPlayer: AVPlayer? = nil
-    @State private var lastAudioSeek: Double = -1
+    
     @State private var isCardHovered = false
     // AVPlayer-based scrub — only created on hover-enter
     @State private var scrubPlayer: AVPlayer? = nil
-    @State private var scrubPlayerReady = false
     
     private let scrubSize = CGSize(width: 480, height: 270)
     private let cardRadius: CGFloat = 14
@@ -53,22 +52,17 @@ struct ClipThumbnailView: View {
             // Video area — hover to scrub
             GeometryReader { geo in
                 ZStack {
-                    Color.black
-                    
-                    // Static poster — stays visible until scrub player has its first frame
-                    if let img = posterImage, (!isHovering || !scrubPlayerReady) {
-                        Image(nsImage: img)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: geo.size.width, height: geo.size.height)
-                            .clipped()
-                    }
-                    
-                    // AVPlayerLayer scrub view (layered on top, hidden until ready)
-                    if isHovering, let player = scrubPlayer {
-                        ScrubPlayerView(player: player)
-                            .frame(width: geo.size.width, height: geo.size.height)
-                    }
+                    // Unified NSView: poster CALayer on top of AVPlayerLayer.
+                    // Poster hides via KVO when AVPlayerLayer.isReadyForDisplay fires.
+                    // Sync cache fallback eliminates black flash on fast scroll when
+                    // LazyVGrid destroys/recreates views and @State posterImage resets.
+                    ScrubPlayerView(
+                        player: scrubPlayer,
+                        posterImage: posterImage ?? thumbnailGenerator.cachedPosterSync(
+                            for: clip.url, duration: clip.duration, size: scrubSize
+                        )
+                    )
+                    .frame(width: geo.size.width, height: geo.size.height)
                     
                     // Rating badge (top-left)
                     if clip.effectiveRating > 0 {
@@ -197,15 +191,13 @@ struct ClipThumbnailView: View {
                         
                         // On hover enter: get a player from the pool
                         if !wasHovering {
-                            scrubPlayerReady = false
                             scrubPlayer = scrubPlayerPool.player(for: clip.url)
-                            // First seek — reveal player layer once frame is decoded
+                            // First seek — poster hides via KVO when AVPlayerLayer
+                            // reports isReadyForDisplay (handled in ScrubPlayerNSView)
                             if let player = scrubPlayer {
-                                scrubPlayerPool.seek(player, to: currentTime) {
-                                    scrubPlayerReady = true
-                                }
+                                scrubPlayerPool.seek(player, to: currentTime)
                             }
-                            if audioEnabled { prepareAudio() }
+                            if audioEnabled { audioScrubEngine.prepareAudio(for: clip.url) }
                         } else {
                             // Subsequent moves: coalesced seek
                             if let player = scrubPlayer {
@@ -214,18 +206,14 @@ struct ClipThumbnailView: View {
                         }
                         
                         if audioEnabled {
-                            let delta = abs(currentTime - lastAudioSeek)
-                            if delta > 0.3 {
-                                seekAudio(to: currentTime)
-                            }
+                            audioScrubEngine.scrub(url: clip.url, to: currentTime)
                         }
                         
                     case .ended:
                         isHovering = false
                         scrubPlayer = nil
-                        scrubPlayerReady = false
                         hoverProgress = 0
-                        stopAudio()
+                        audioScrubEngine.stop()
                     }
                 }
                 .contentShape(Rectangle())
@@ -317,36 +305,6 @@ struct ClipThumbnailView: View {
         )
         .cornerRadius(10)
         .shadow(color: .black.opacity(0.3), radius: 3, y: 1)
-    }
-    
-    // MARK: - Audio Scrub
-    
-    private func prepareAudio() {
-        if audioPlayer == nil {
-            let playerItem = AVPlayerItem(url: clip.url)
-            audioPlayer = AVPlayer(playerItem: playerItem)
-            audioPlayer?.volume = 0.5
-        }
-    }
-    
-    private func seekAudio(to time: Double) {
-        guard let player = audioPlayer else { return }
-        lastAudioSeek = time
-        let cmTime = CMTime(seconds: time, preferredTimescale: 600)
-        player.seek(to: cmTime, toleranceBefore: .zero, toleranceAfter: .zero) { _ in
-            player.play()
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                if abs(self.currentTime - time) < 0.5 {
-                    player.pause()
-                }
-            }
-        }
-    }
-    
-    private func stopAudio() {
-        audioPlayer?.pause()
-        audioPlayer = nil
-        lastAudioSeek = -1
     }
     
     // MARK: - Star Rating

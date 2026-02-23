@@ -286,6 +286,7 @@ struct ClipGridView: View {
                 set: { if !$0 { store.showTagPickerForClipID = nil } }
             ),
             thumbnailGenerator: store.thumbnailGenerator,
+            scrubPlayerPool: store.scrubPlayerPool,
             availableTags: store.availableTags,
             audioEnabled: audioEnabled,
             onRate: { rating in

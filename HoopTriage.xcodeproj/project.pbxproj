@@ -20,6 +20,7 @@
 		AA00000B /* AudioTriageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001B /* AudioTriageView.swift */; };
 		AA00000C /* AudioAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001C /* AudioAnalyzer.swift */; };
 		AA00000D /* TagPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001D /* TagPickerView.swift */; };
+		AA00000E /* ScrubPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001E /* ScrubPlayerView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -38,6 +39,7 @@
 		AA00001B /* AudioTriageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioTriageView.swift; sourceTree = "<group>"; };
 		AA00001C /* AudioAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioAnalyzer.swift; sourceTree = "<group>"; };
 		AA00001D /* TagPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagPickerView.swift; sourceTree = "<group>"; };
+		AA00001E /* ScrubPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrubPlayerView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -74,6 +76,7 @@
 				AA00001B /* AudioTriageView.swift */,
 				AA00001C /* AudioAnalyzer.swift */,
 				AA00001D /* TagPickerView.swift */,
+				AA00001E /* ScrubPlayerView.swift */,
 				AA000018 /* Assets.xcassets */,
 				AA000019 /* HoopTriage.entitlements */,
 			);
@@ -164,6 +167,7 @@
 				AA00000B /* AudioTriageView.swift in Sources */,
 				AA00000C /* AudioAnalyzer.swift in Sources */,
 				AA00000D /* TagPickerView.swift in Sources */,
+				AA00000E /* ScrubPlayerView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

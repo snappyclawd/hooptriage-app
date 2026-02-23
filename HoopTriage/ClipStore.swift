@@ -85,6 +85,7 @@ class ClipStore: ObservableObject {
     }
     
     let thumbnailGenerator = ThumbnailGenerator()
+    let scrubPlayerPool = ScrubPlayerPool()
     
     private var loadedURLs: Set<URL> = []
     

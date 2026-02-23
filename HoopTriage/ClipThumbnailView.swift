@@ -1,12 +1,17 @@
 import SwiftUI
 import AVFoundation
 
-/// A single clip card with hover-scrub, poster, rating, and tags
+/// A single clip card with hover-scrub, poster, rating, and tags.
+///
+/// Scrubbing uses a shared AVPlayer from ScrubPlayerPool, only acquired
+/// on hover-enter and released on hover-leave. The AVPlayerLayer renders
+/// decoded frames directly via GPU. Seeks are coalesced to avoid stutter.
 struct ClipThumbnailView: View {
     let clip: Clip
     let isHovered: Bool
     @Binding var showTagPickerBinding: Bool
     let thumbnailGenerator: ThumbnailGenerator
+    let scrubPlayerPool: ScrubPlayerPool
     let availableTags: [String]
     let audioEnabled: Bool
     let onRate: (Int) -> Void
@@ -20,16 +25,16 @@ struct ClipThumbnailView: View {
     let onOpen: () -> Void
     
     @State private var posterImage: NSImage? = nil
-    @State private var scrubImage: NSImage? = nil
     @State private var isHovering = false
     @State private var hoverProgress: CGFloat = 0
     @State private var currentTime: Double = 0
     @State private var hoveredStar: Int = 0
     @State private var showTagPicker = false
-    @State private var newTagText = ""
     @State private var audioPlayer: AVPlayer? = nil
     @State private var lastAudioSeek: Double = -1
-    @State private var isCardHovered = false  // tracks hover over ENTIRE card
+    @State private var isCardHovered = false
+    // AVPlayer-based scrub — only created on hover-enter
+    @State private var scrubPlayer: AVPlayer? = nil
     
     private let scrubSize = CGSize(width: 480, height: 270)
     private let cardRadius: CGFloat = 14
@@ -49,7 +54,8 @@ struct ClipThumbnailView: View {
                 ZStack {
                     Color.black
                     
-                    if let img = isHovering ? (scrubImage ?? posterImage) : posterImage {
+                    // Static poster image (shown when NOT hovering)
+                    if !isHovering, let img = posterImage {
                         Image(nsImage: img)
                             .resizable()
                             .aspectRatio(contentMode: .fill)
@@ -57,7 +63,13 @@ struct ClipThumbnailView: View {
                             .clipped()
                     }
                     
-                    // Rating badge (top-left) — solid for confirmed, outline for suggested
+                    // AVPlayerLayer scrub view (shown ONLY when hovering)
+                    if isHovering, let player = scrubPlayer {
+                        ScrubPlayerView(player: player)
+                            .frame(width: geo.size.width, height: geo.size.height)
+                    }
+                    
+                    // Rating badge (top-left)
                     if clip.effectiveRating > 0 {
                         VStack {
                             HStack {
@@ -87,7 +99,7 @@ struct ClipThumbnailView: View {
                         }
                     }
                     
-                    // Accept/Dismiss suggestion buttons (bottom, on hover)
+                    // Accept/Dismiss suggestion buttons
                     if clip.hasSuggestion && isCardHovered {
                         VStack {
                             Spacer()
@@ -129,12 +141,12 @@ struct ClipThumbnailView: View {
                         }
                     }
                     
-                    // Tag pills overlay (top-left, below rating if present)
+                    // Tag pills overlay
                     if !clip.tags.isEmpty {
                         VStack {
                             HStack {
                                 if clip.rating > 0 {
-                                    Spacer().frame(width: 0) // rating badge is already there
+                                    Spacer().frame(width: 0)
                                 }
                                 Spacer()
                             }
@@ -182,18 +194,18 @@ struct ClipThumbnailView: View {
                         hoverProgress = progress
                         currentTime = clip.duration * Double(progress)
                         
-                        if !wasHovering && audioEnabled {
-                            prepareAudio()
-                        }
-                        
-                        Task {
-                            let img = await thumbnailGenerator.thumbnail(
-                                for: clip.url,
-                                at: currentTime,
-                                size: scrubSize
-                            )
-                            await MainActor.run {
-                                if isHovering { scrubImage = img }
+                        // On hover enter: get a player from the pool
+                        if !wasHovering {
+                            scrubPlayer = scrubPlayerPool.player(for: clip.url)
+                            // Seek to initial position immediately
+                            if let player = scrubPlayer {
+                                scrubPlayerPool.seek(player, to: currentTime)
+                            }
+                            if audioEnabled { prepareAudio() }
+                        } else {
+                            // Subsequent moves: coalesced seek
+                            if let player = scrubPlayer {
+                                scrubPlayerPool.seek(player, to: currentTime)
                             }
                         }
                         
@@ -206,7 +218,7 @@ struct ClipThumbnailView: View {
                         
                     case .ended:
                         isHovering = false
-                        scrubImage = nil
+                        scrubPlayer = nil
                         hoverProgress = 0
                         stopAudio()
                     }
@@ -218,7 +230,7 @@ struct ClipThumbnailView: View {
             }
             .aspectRatio(16/9, contentMode: .fit)
             
-            // Info bar — click to open
+            // Info bar
             VStack(spacing: 6) {
                 HStack(spacing: 8) {
                     Text(clip.filename)
@@ -251,7 +263,6 @@ struct ClipThumbnailView: View {
         .background(Color(nsColor: .controlBackgroundColor))
         .clipShape(RoundedRectangle(cornerRadius: cardRadius, style: .continuous))
         .shadow(color: .black.opacity(0.08), radius: 8, y: 3)
-        // Track hover over the ENTIRE card for hoveredClipID and delete button
         .onHover { hovering in
             isCardHovered = hovering
             onHoverChange(hovering)
@@ -355,11 +366,9 @@ struct ClipThumbnailView: View {
         if hoveredStar > 0 {
             return star <= hoveredStar ? .orange : Color.gray.opacity(0.25)
         }
-        // Confirmed rating = solid yellow
         if clip.rating > 0 {
             return star <= clip.rating ? .yellow : Color.gray.opacity(0.25)
         }
-        // Suggested rating = blue ghost
         if clip.suggestedRating > 0 {
             return star <= clip.suggestedRating ? Color.blue.opacity(0.5) : Color.gray.opacity(0.25)
         }
